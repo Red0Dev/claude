@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BR1 Monitor de servidores
 // @namespace    br1-monitor
-// @version      4.0
+// @version      4.1
 // @description  Avisa quando um servidor das Kill Races do BR1 abre ou fecha
 // @match        https://www.br1game.com/*
 // @run-at       document-idle
@@ -81,6 +81,18 @@
     const m = nome.match(/^(.+?)\s+-\s+(.+?)(?:\s+(\$\s?[\d.,]+))?$/);
     return m ? { reg: m[1], mapa: m[2], taxa: m[3] || '' } : { reg: '', mapa: nome, taxa: '' };
   };
+  // Cada região tem uma cor, para dar para reconhecer de relance (US azul, EU roxo, SA amarelo...).
+  const CORES_REGIAO = {
+    US: '#4DA3FF', NA: '#4DA3FF', EU: '#B794FF', SA: '#FFC233', BR: '#2DD4BF',
+    SEA: '#FF7AB6', ASIA: '#FF9F43', AS: '#FF9F43', OCE: '#FF6B6B', AU: '#FF6B6B', ME: '#F5D547',
+  };
+  const etiqueta = reg => {
+    const m = reg.match(/^([A-Za-z]+)\s*(.*)$/);
+    const cod = m ? m[1].toUpperCase() : reg;
+    const resto = m ? m[2] : '';
+    const cor = CORES_REGIAO[cod] || '#03CEFF';
+    return `<span class="reg" style="--c:${cor}"><span>${esc(cod)}</span>${resto ? `<i>${esc(resto)}</i>` : ''}</span>`;
+  };
 
   // ------------------------------------------------------------- visual
   const svg = d => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -96,6 +108,7 @@
   const notch = n => `polygon(0 0, calc(100% - ${n}px) 0, 100% ${n}px, 100% 100%, ${n}px 100%, 0 calc(100% - ${n}px))`;
   const TITULO = '"Monument Extended", "Segoe UI", system-ui, sans-serif';
   const DISPLAY = 'Promo, "Monument Extended", "Segoe UI", system-ui, sans-serif';
+  const LEGIVEL = '"Segoe UI", Inter, system-ui, sans-serif';
 
   const CSS = `
     :host { all: initial; position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; }
@@ -128,7 +141,7 @@
     @keyframes ping { 0% { transform: scale(1); opacity: .7; } 75%, 100% { transform: scale(2.6); opacity: 0; } }
 
     .head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 0 14px; }
-    .brand { display: flex; align-items: center; gap: 9px; font: 700 9px/1 ${TITULO}; letter-spacing: .24em;
+    .brand { display: flex; align-items: center; gap: 9px; font: 700 9.5px/1 ${TITULO}; letter-spacing: .24em;
              text-transform: uppercase; color: rgba(255,255,255,.55); }
     .actions { display: flex; gap: 2px; }
     .icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: rgba(255,255,255,.5);
@@ -139,7 +152,7 @@
     .hero { display: grid; grid-template-columns: auto 1fr; align-items: end; column-gap: 12px; row-gap: 12px; padding: 8px 14px 12px; }
     .num { font: 400 46px/.86 ${DISPLAY}; color: #00FF90; text-shadow: 0 0 26px rgba(0,255,144,.35); font-variant-numeric: tabular-nums; }
     .num.zero { color: rgba(255,255,255,.3); text-shadow: none; }
-    .lbl { padding-bottom: 2px; font: 700 9.5px/1.3 ${TITULO}; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+    .lbl { padding-bottom: 2px; font: 700 10px/1.3 ${TITULO}; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.7); }
     .lbl small { display: block; margin-top: 5px; font: 500 11px/1.35 Inter, "Segoe UI", system-ui, sans-serif; letter-spacing: 0;
                  text-transform: none; color: rgba(255,255,255,.42); }
     .bar { grid-column: 1 / -1; height: 2px; background: rgba(255,255,255,.07); overflow: hidden; }
@@ -156,7 +169,7 @@
     .btn:hover { filter: brightness(1.15); }
 
     .tabs { display: flex; gap: 20px; padding: 0 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .tab { position: relative; display: flex; align-items: center; gap: 7px; padding: 9px 0 10px; font: 700 8.5px/1 ${TITULO};
+    .tab { position: relative; display: flex; align-items: center; gap: 7px; padding: 9px 0 10px; font: 700 9.5px/1 ${TITULO};
            letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.4); transition: color .15s; }
     .tab:hover { color: rgba(255,255,255,.8); }
     .tab.on { color: #fff; }
@@ -167,17 +180,20 @@
 
     .list { max-height: min(46vh, 360px); overflow-y: auto; padding: 4px 8px 10px; scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,.15) transparent; }
-    .race { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 6px 6px; }
-    .race-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 9.5px/1.3 ${TITULO}; color: #fff; letter-spacing: .07em;
+    .race { position: sticky; top: -4px; z-index: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+            padding: 12px 6px 7px; background: #08080b; }
+    .race-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 10.5px/1.3 ${TITULO}; color: #fff; letter-spacing: .06em;
               text-transform: uppercase; }
     .race-t { flex: none; font-size: 11px; color: rgba(255,255,255,.4); font-variant-numeric: tabular-nums; }
     .srv { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: 3px; transition: background .15s; }
     .srv:hover { background: rgba(255,255,255,.04); }
     .srv.novo { background: linear-gradient(90deg, rgba(0,255,144,.13), transparent 75%); box-shadow: inset 2px 0 0 #00FF90; }
-    .reg { flex: none; min-width: 70px; padding: 5px 7px; text-align: center; white-space: nowrap; font: 700 9.5px/1 ${TITULO};
-           letter-spacing: .06em; color: #03CEFF; background: rgba(3,206,255,.1); clip-path: ${notch(5)}; }
+    .reg { flex: none; display: inline-flex; align-items: baseline; justify-content: center; gap: 4px; min-width: 68px; padding: 4px 8px;
+           white-space: nowrap; font: 800 12.5px/1.15 ${LEGIVEL}; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent);
+           box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); clip-path: ${notch(5)}; }
+    .reg i { font-style: normal; font-weight: 600; font-size: 11.5px; color: rgba(255,255,255,.85); }
     .map { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.78); }
-    .tag { flex: none; padding: 3px 5px; font: 700 7.5px/1 ${TITULO}; letter-spacing: .16em; text-transform: uppercase;
+    .tag { flex: none; padding: 3px 5px; font: 700 8px/1 ${TITULO}; letter-spacing: .16em; text-transform: uppercase;
            color: #03140c; background: #00FF90; }
     .fee { flex: none; font-weight: 700; color: #00FF90; font-variant-numeric: tabular-nums; }
 
@@ -191,11 +207,12 @@
     .ev.fechou .ev-ic { color: #ff4d5e; background: rgba(255,77,94,.12); }
     .ev.erro   .ev-ic { color: #eab308; background: rgba(234,179,8,.12); }
     .ev.ok     .ev-ic { color: #03CEFF; background: rgba(3,206,255,.12); }
-    .ev-t { font-size: 12.5px; color: #fff; overflow-wrap: anywhere; }
-    .ev-t b { margin-right: 7px; font: 700 8.5px/1 ${TITULO}; letter-spacing: .16em; text-transform: uppercase; }
+    .ev-t { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12.5px; color: #fff; overflow-wrap: anywhere; }
+    .ev-t b { font: 700 9px/1 ${TITULO}; letter-spacing: .16em; text-transform: uppercase; }
+    .ev-t .fee { font-size: 12px; }
     .ev.abriu .ev-t b { color: #00FF90; }
     .ev.fechou .ev-t b { color: #ff4d5e; }
-    .ev-s { margin-top: 2px; font-size: 11px; color: rgba(255,255,255,.4); }
+    .ev-s { margin-top: 4px; font-size: 11px; color: rgba(255,255,255,.4); }
     .ev-time { padding-top: 3px; white-space: nowrap; font-size: 11px; color: rgba(255,255,255,.35); font-variant-numeric: tabular-nums; }
 
     .vazio { padding: 26px 16px 22px; text-align: center; font-size: 12px; color: rgba(255,255,255,.45); }
@@ -208,7 +225,7 @@
 
     .pill-n { font: 400 21px/1 ${DISPLAY}; color: #00FF90; font-variant-numeric: tabular-nums; }
     .pill-n.zero { color: rgba(255,255,255,.4); }
-    .pill-l { font: 700 8.5px/1 ${TITULO}; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.65); transition: color .15s; }
+    .pill-l { font: 700 9px/1 ${TITULO}; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.65); transition: color .15s; }
     .pill:hover .pill-l { color: #fff; }
     .pill-mudo { display: grid; color: #eab308; }
 
@@ -426,7 +443,7 @@
         const p = partes(s);
         const novo = Date.now() - (abertoEm[s] || 0) < NOVO_MS;
         return `<div class="srv${novo ? ' novo' : ''}" title="${esc(s)}">` +
-          (p.reg ? `<span class="reg">${esc(p.reg)}</span>` : '') +
+          (p.reg ? etiqueta(p.reg) : '') +
           `<span class="map">${esc(p.mapa)}</span>` +
           (novo ? '<span class="tag">Novo</span>' : '') +
           (p.taxa ? `<span class="fee">${esc(p.taxa)}</span>` : '') + '</div>';
@@ -434,6 +451,12 @@
     }).join('');
     box.scrollTop = rolagem;
   }
+
+  const descricao = nome => {
+    const p = partes(nome);
+    if (!p.reg) return esc(nome);
+    return `${etiqueta(p.reg)}${p.taxa ? `<span class="fee">${esc(p.taxa)}</span>` : ''}`;
+  };
 
   function desenharAtividade(limiarNovos) {
     const box = $('feed');
@@ -449,8 +472,8 @@
       if (e.tipo === 'abriu' || e.tipo === 'fechou') {
         const abriu = e.tipo === 'abriu';
         return `<div class="ev ${e.tipo}${fresco}"><span class="ev-ic">${abriu ? IC.subiu : IC.desceu}</span>` +
-          `<div><div class="ev-t"><b>${abriu ? 'Abriu' : 'Fechou'}</b>${esc(e.s)}</div>` +
-          `<div class="ev-s">${esc((e.r || []).join(', '))}</div></div>${hora}</div>`;
+          `<div><div class="ev-t"><b>${abriu ? 'Abriu' : 'Fechou'}</b>${descricao(e.s)}</div>` +
+          `<div class="ev-s">${esc([partes(e.s).reg ? partes(e.s).mapa : '', (e.r || []).join(', ')].filter(Boolean).join(' · '))}</div></div>${hora}</div>`;
       }
       const erro = e.tipo === 'erro';
       return `<div class="ev ${erro ? 'erro' : 'ok'}${fresco}"><span class="ev-ic">${erro ? IC.alerta : IC.ok}</span>` +

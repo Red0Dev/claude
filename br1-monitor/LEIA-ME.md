@@ -35,6 +35,7 @@ Basta deixar uma aba do site aberta, que pode ficar em segundo plano.
   - A barrinha embaixo mostra quanto falta para a próxima checagem.
   - A borda fica verde quando está tudo certo e amarela quando o site não responde.
 - **Aba Ao vivo:** os servidores abertos, separados por race, com quanto tempo falta para cada race acabar.
+  Cada região tem uma cor: US azul, EU roxo, SA amarelo, SEA rosa e BR verde-água.
   Servidores que abriram nos últimos 10 minutos ganham a etiqueta **NOVO**.
 - **Aba Atividade:** histórico do que abriu e fechou. O histórico fica salvo mesmo se você recarregar a página.
   O número verde mostra quantas mudanças você ainda não viu.
