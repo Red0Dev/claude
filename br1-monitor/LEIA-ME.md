@@ -31,11 +31,18 @@ Basta deixar uma aba do site aberta, que pode ficar em segundo plano.
 
 ## O painel
 
-- O título mostra quantos servidores estão abertos, somando todas as kill races ao vivo.
-- `_` minimiza o painel. Ele lembra disso na próxima vez. `+` mostra de novo.
-- `x` para o monitor só naquela aba, até você recarregar a página.
-- Se houver várias abas do site abertas, só uma faz a checagem. Você recebe cada aviso uma vez só.
-- Se um servidor abrir ou fechar enquanto o navegador estava fechado (até 10 minutos), você é avisado quando voltar.
+- **Cabeçalho:** quantos servidores estão abertos, somando todas as kill races ao vivo.
+  - A barrinha embaixo mostra quanto falta para a próxima checagem.
+  - A borda fica verde quando está tudo certo e amarela quando o site não responde.
+- **Aba Ao vivo:** os servidores abertos, separados por race, com quanto tempo falta para cada race acabar.
+  Servidores que abriram nos últimos 10 minutos ganham a etiqueta **NOVO**.
+- **Aba Atividade:** histórico do que abriu e fechou. O histórico fica salvo mesmo se você recarregar a página.
+  O número verde mostra quantas mudanças você ainda não viu.
+- **Sino:** silencia ou religa as notificações do Windows. O painel continua atualizando.
+- **Setinha ou Esc:** minimiza o painel para uma pílula pequena, com o número de servidores. Clique nela para abrir de novo.
+- **Clique na notificação:** leva você para a aba do site.
+- **Várias abas do site:** só uma faz a checagem. Você recebe cada aviso uma vez só.
+- **Navegador fechado:** se um servidor abrir ou fechar nesse meio tempo (até 10 minutos), você é avisado quando voltar.
 
 ## Dicas
 
