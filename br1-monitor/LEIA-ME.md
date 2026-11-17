@@ -1,9 +1,12 @@
 # BR1 Monitor de servidores
 
-Fica de olho na lista **SERVERS** da Kill Race do BR1 e mostra uma notificação do Windows:
+Fica de olho nos servidores de **todas as Kill Races ao vivo** do BR1 e mostra uma notificação do Windows:
 
 - **ABRIU SA #1 - MilitaryBase $0.25** quando um servidor novo aparece
 - **FECHOU EU #6 - MilitaryBase $1** quando um servidor some da lista
+
+Quando uma kill race termina e outra começa, inclusive na semana seguinte, ele passa a seguir a nova sozinho.
+A notificação diz de qual race é o servidor.
 
 O monitor roda **dentro da aba do site, no seu navegador**.
 O site recusa (erro 403) consultas feitas por programas fora do navegador, como o CMD ou o PowerShell.
@@ -19,7 +22,7 @@ O site recusa (erro 403) consultas feitas por programas fora do navegador, como 
    - Edge: abra `edge://extensions` e ligue o **Modo de desenvolvedor**, na barra da esquerda.
 3. **Instale o script**: abra o link abaixo. O Tampermonkey mostra uma tela de instalação. Clique em **Instalar**.
    https://raw.githubusercontent.com/Red0Dev/claude/claude/keen-cerf-kli3yh/br1-monitor/br1-monitor.user.js
-4. **Abra o site**: https://www.br1game.com/kill-race/info/0074b0b7-a886-4f27-9a15-971052cbc158
+4. **Abra o site**: qualquer página do https://www.br1game.com serve.
    Aparece um painel preto no canto inferior direito.
    Clique em **Ativar avisos** e depois em **Permitir**. Deve chegar uma notificação de teste.
 
@@ -28,7 +31,7 @@ Basta deixar uma aba do site aberta, que pode ficar em segundo plano.
 
 ## O painel
 
-- O título mostra quantos servidores estão abertos.
+- O título mostra quantos servidores estão abertos, somando todas as kill races ao vivo.
 - `_` minimiza o painel. Ele lembra disso na próxima vez. `+` mostra de novo.
 - `x` para o monitor só naquela aba, até você recarregar a página.
 - Se houver várias abas do site abertas, só uma faz a checagem. Você recebe cada aviso uma vez só.
@@ -46,10 +49,13 @@ Basta deixar uma aba do site aberta, que pode ficar em segundo plano.
 
 ## Como funciona
 
-A página da kill race busca a lista de servidores em `/api/game/killrace/info/<id-da-race>` (campo `servers`).
-O monitor faz essa mesma consulta a cada 30 segundos, de dentro da página, e compara com a última lista conhecida.
+A página de kill races do site busca a lista de races em `/api/game/killrace/active`.
+Cada race vem com a fase (Live, Upcoming ou Completed) e os servidores dela.
+O monitor faz essa mesma consulta a cada 30 segundos, de dentro da página.
+Ele junta os servidores das races ao vivo e compara com a última lista conhecida.
+Races que ainda não começaram são ignoradas até ficarem ao vivo.
 
 - Se mudarem mais de 3 servidores de uma vez, chega uma notificação só, com a lista.
 - Se o site falhar 3 vezes seguidas, chega um aviso, e o monitor continua tentando.
   Enquanto isso, nenhum servidor é dado como fechado por engano.
-- Se você estiver numa página de outra kill race, o monitor acompanha a race daquela página.
+- Quando uma race termina, os servidores dela aparecem como FECHOU. A exceção são os que também estão em outra race ao vivo.
