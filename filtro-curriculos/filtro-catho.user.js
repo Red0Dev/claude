@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      4.0
-// @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas, dá 👍 em quem mora perto e ajuda a responder no WhatsApp Web
+// @version      4.1
+// @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
 // @match        https://www.google.com/maps*
 // @match        https://www.google.com.br/maps*
-// @match        https://web.whatsapp.com/*
 // @run-at       document-start
 // @noframes
 // @sandbox      JavaScript
@@ -36,12 +35,10 @@
 //    para pegar o WhatsApp e avisa com uma notificação. Na primeira vez, ele marca em vermelho
 //    os 👍 que daria e espera você conferir antes de clicar.
 // 4. Enquanto você navega na Catho, o painel no canto mostra os tempos de ônibus de quem aparece.
-// 5. No WhatsApp Web, um quadro mostra quem é a pessoa da conversa e as respostas prontas: um clique
-//    coloca o texto na caixa de mensagem e você confere e aperta Enter (nada é enviado sozinho).
 (() => {
   'use strict';
 
-  const VERSAO = '4.0';
+  const VERSAO = '4.1';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -68,11 +65,10 @@
   const K = {
     cand: 'pm:candidatos', cfg: 'pm:config', ui: 'pm:ui', worker: 'pm:worker', varredura: 'pm:varredura',
     mapsPedidos: 'pm:maps:pedidos', mapsRes: 'pm:maps:resultados', mapsVivo: 'pm:maps:vivo', mapsAbertura: 'pm:maps:abertura',
-    caminho: 'pm:caminho-inscritos', vagasIds: 'pm:vagas-ids', contatos: 'pm:contatos', msgs: 'pm:mensagens', respostas: 'pm:respostas-whats',
+    caminho: 'pm:caminho-inscritos', vagasIds: 'pm:vagas-ids', contatos: 'pm:contatos', msgs: 'pm:mensagens',
   };
   const CFG_PADRAO = { chave: '', limite: 45, saida: '08:00', vagaPagina: '', diario: true, hora: '09:00', pegarWhats: true, curtirConfirmado: false, incluirDesativadas: false };
   const W = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-  const EH_WHATS = location.hostname === 'web.whatsapp.com';
 
   // ------------------------------------------------------------------ utilidades
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -360,7 +356,7 @@
     } catch (e) { if (diag.erros.length < 5) diag.erros.push(String(e)); }
   }
 
-  if (!EH_WHATS) try { // no WhatsApp Web não escuta nada da rede
+  try {
     const fetchOriginal = W.fetch;
     if (typeof fetchOriginal === 'function') {
       W.fetch = function (...args) {
@@ -1188,6 +1184,7 @@
     vergueiro: msgAtendente('Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo'),
   };
   const mensagens = () => ({ ...MENSAGENS_PADRAO, ...ler(K.msgs, {}) });
+  const ETAPAS = [['', '—'], ['respondeu', 'Respondeu'], ['interessado', 'Interessado'], ['entrevista', 'Entrevista marcada'], ['sem-interesse', 'Sem interesse']];
   // Marcações de contato ficam separadas dos candidatos, para a verificação diária nunca apagar nada.
   const contatos = () => ler(K.contatos, {});
   function mexerContato(id, fn) {
@@ -1735,324 +1732,6 @@
     };
   }
 
-  // ------------------------------------------------------------------ WhatsApp Web: respostas prontas
-  // Roda em web.whatsapp.com. Mostra quem é a pessoa da conversa aberta (se veio da Catho), sugere a
-  // resposta e, ao clicar, coloca o texto na caixa de mensagem. Quem envia é sempre você (Enter):
-  // o script nunca envia nada sozinho.
-  const ETAPAS = [['', '—'], ['respondeu', 'Respondeu'], ['interessado', 'Interessado'], ['entrevista', 'Entrevista marcada'], ['sem-interesse', 'Sem interesse']];
-  const FREELA_VAGA = [
-    '{saudacao}, tudo bem? No momento temos uma vaga de atendente de delivery.',
-    '',
-    '*Unidade de Nova Petrópolis*',
-    'As principais atividades da função são:',
-    '• Atendimento ao cliente e caixa',
-    '• Receber pedidos via aplicativo',
-    '• Preparar os pedidos de forma ágil e organizada',
-    '• Organizar e conferir os pedidos antes da entrega',
-    '• Controlar o estoque',
-    '• Responder os clientes via WhatsApp',
-    '',
-    'Freelancer FIXO de domingo, segunda ou terça das 11h30 as 20h30, valor R$ 120 + 11,90 de transporte na segunda e terça e 160 + 11,90 dia de domingo.',
-    'Endereço: Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo',
-    '',
-  ].join('\n');
-  const RESPOSTAS = [
-    { id: 'interessado', grupo: 'Vaga CLT (Catho)', titulo: 'Tem interesse → próxima etapa', etapa: 'interessado',
-      texto: 'Que ótimo, {nome}! Vou repassar para o responsável e já te retorno com os próximos passos do processo seletivo.' },
-    { id: 'sem-interesse', grupo: 'Vaga CLT (Catho)', titulo: 'Sem interesse → agradecer', etapa: 'sem-interesse',
-      texto: 'Tudo bem, {nome}, obrigada pelo retorno! Se surgir outra oportunidade, entramos em contato.' },
-    { id: 'vaga-cv', grupo: 'Freelancer', titulo: 'Vaga disponível → pedir currículo',
-      texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
-    { id: 'vaga-disp', grupo: 'Freelancer', titulo: 'Vaga disponível → pedir disponibilidade',
-      texto: `${FREELA_VAGA}\nCaso te interesse peço que me informe a sua disponibilidade para eu repassar ao responsável` },
-    { id: 'qual-dia', grupo: 'Freelancer', titulo: 'Qual dia? (dom, seg ou ter)',
-      texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para domingo, segunda e terça. Obrigada!' },
-    { id: 'freela-ok', grupo: 'Freelancer', titulo: 'Está disponível → deixar currículo',
-      texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
-    { id: 'recebi-cv', grupo: 'Freelancer', titulo: 'Recebi o currículo',
-      texto: 'Obrigada pelo interesse, vou repassar seu currículo para o responsável e já te retorno' },
-    { id: 'bairro', grupo: 'Geral', titulo: 'Pedir o bairro',
-      texto: '{saudacao}, tudo bem? Pode me informar o seu bairro, por favor? Há apenas {cidade} no currículo.' },
-  ];
-  const respostaTexto = id => { const r = RESPOSTAS.find(x => x.id === id); return (ler(K.respostas, {}) || {})[id] ?? (r ? r.texto : ''); };
-  const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
-  function preencher(texto, nome, cidade) {
-    let t = String(texto || '').replace(/\{saudacao\}/gi, saudacao());
-    t = nome ? t.replace(/\{nome\}/gi, nome) : t.replace(/,?[ \t]*\{nome\}/gi, '');
-    return t.replace(/\{cidade\}/gi, cidade || '[cidade]');
-  }
-  const primeiroNome = n => { const p = String(n || '').trim().split(/\s+/)[0] || ''; return p && !/\d/.test(p) ? p[0].toUpperCase() + p.slice(1).toLowerCase() : ''; };
-
-  // Conversa aberta: título, telefone (do título ou dos ids das mensagens) e últimas mensagens.
-  function chatAberto() {
-    const main = document.querySelector('#main');
-    if (!main) return null;
-    const header = main.querySelector('header');
-    const tituloEl = header && (header.querySelector('span[dir="auto"]') || header);
-    const titulo = tituloEl ? texto(tituloEl).split('\n')[0] : '';
-    let fone = /^\+?[\d\s().-]{12,}$/.test(titulo) ? limparFone(titulo) : null;
-    if (!fone) {
-      for (const el of main.querySelectorAll('[data-id]')) {
-        const m = (el.getAttribute('data-id') || '').match(/(?:^|_)(\d{12,13})@c\.us/);
-        if (m) { fone = limparFone(m[1]); break; }
-      }
-    }
-    const msgs = [...main.querySelectorAll('.message-in, .message-out')].slice(-30).map(m => {
-      const corpo = m.querySelector('.copyable-text') || m;
-      return {
-        entrada: m.classList.contains('message-in'),
-        texto: (corpo.innerText || '').trim(),
-        pdf: /\.pdf\b/i.test(m.innerText || '') || !!m.querySelector('[data-icon*="document" i], [data-icon*="pdf" i], [title$=".pdf" i]'),
-      };
-    });
-    return { titulo, fone, msgs };
-  }
-  function candidatoDoChat(chat) {
-    const lista = Object.values(candidatos());
-    if (chat.fone) { const x = lista.find(c => (c.fones || []).includes(chat.fone)); if (x) return x; }
-    const t = norm(chat.titulo);
-    if (!t || /\d{5}/.test(t)) return null;
-    const b = t.split(' ');
-    return lista.find(c => norm(c.nome) === t)
-      || (b.length >= 2 ? lista.find(c => { const a = norm(c.nome).split(' '); return a[0] === b[0] && a.includes(b[b.length - 1]); }) : null) || null;
-  }
-  // Sugestão pela última mensagem recebida (depois da última que você mandou).
-  function sugerirResposta(chat, cand) {
-    const msgs = chat.msgs;
-    let i = msgs.length - 1;
-    while (i >= 0 && msgs[i].entrada) i--;
-    const novas = msgs.slice(i + 1).filter(m => m.entrada);
-    if (!novas.length) return null;
-    const t = norm(novas.map(m => m.texto).join(' '));
-    const pdf = novas.some(m => m.pdf);
-    const enviamosVaga = msgs.some(m => !m.entrada && /se cadastrou em nossa vaga/i.test(m.texto));
-    const pedimosBairro = msgs.some(m => !m.entrada && /informar o seu bairro/i.test(m.texto));
-    const dia = /(domingo|segunda|terca|\bdom\b|\bseg\b|\bter\b)/.test(t);
-    if (/(nao tenho (mais )?interesse|sem interesse|nao (vou|posso|consigo)|ja (estou|consegui|arrumei)|desist)/.test(t)) return 'sem-interesse';
-    if (pedimosBairro && /(moro|bairro|resido|jardim|vila|parque|centro)/.test(t)) return 'salvar-bairro';
-    if (enviamosVaga || cand) return /(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t) ? 'interessado' : null;
-    if (pdf || /curriculo/.test(t)) return dia ? 'recebi-cv' : 'qual-dia';
-    if (/freela/.test(t)) return dia ? 'freela-ok' : 'qual-dia';
-    if (/(vaga|saber mais|candidat|disponivel|interess|trabalh)/.test(t)) return 'vaga-cv';
-    return null;
-  }
-  const bairroDaMensagem = chat => {
-    const m = [...chat.msgs].reverse().find(x => x.entrada && /(moro|resido|bairro)/i.test(x.texto));
-    const r = m && m.texto.match(/(?:moro|resido|bairro)\s+(?:no|na|em|é|e)?\s*(?:bairro\s+)?(?:do|da|de)?\s*([A-ZÀ-Úa-zà-ú][\wÀ-ú.' ]{2,40}?)(?=[,.!\n]|\s+(?:bem|perto|em|no|na|há|faz|desde)\b|$)/i);
-    return r ? r[1].trim() : '';
-  };
-
-  // Coloca o texto na caixa de mensagem (não envia). Se a página não aceitar, copia para colar com Ctrl+V.
-  function caixaDeMensagem() {
-    const main = document.querySelector('#main');
-    if (!main) return null;
-    const eds = [...main.querySelectorAll('[contenteditable="true"]')].filter(visivel);
-    return eds.find(e => e.closest('footer')) || eds[eds.length - 1] || null;
-  }
-  async function colocarNaCaixa(txt) {
-    const el = caixaDeMensagem();
-    const inicio = norm(txt).slice(0, 25);
-    const entrou = () => el && norm(el.innerText || '').includes(inicio);
-    if (el) {
-      el.focus();
-      try { document.execCommand('selectAll', false, null); } catch (e) { /* ignora */ }
-      try {
-        const dt = new DataTransfer();
-        dt.setData('text/plain', txt);
-        el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
-      } catch (e) { /* ignora */ }
-      await dorme(200);
-      if (!entrou()) { try { document.execCommand('insertText', false, txt); } catch (e) { /* ignora */ } await dorme(200); }
-    }
-    if (entrou()) return true;
-    GM_setClipboard(txt, 'text');
-    return false;
-  }
-
-  let raizW = null, avisoW = null, editorW = false, assinaturaW = '', conversaW = '';
-  const CSS_WHATS = `
-    :host { all: initial; }
-    .box { position: fixed; right: 18px; bottom: 86px; z-index: 2147483646; width: 340px; max-height: 62vh; display: flex; flex-direction: column;
-      background: #ffffff; color: #111b21; border: 1px solid #d1d7db; border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.25);
-      font: 13px/1.4 "Segoe UI", Roboto, Arial, sans-serif; }
-    .box.escuro { background: #1f2c34; color: #e9edef; border-color: #2a3942; }
-    .box.min { width: auto; } .box.min .corpo { display: none; }
-    header { display: flex; gap: 8px; align-items: center; padding: 7px 10px; background: #7a2e55; color: #fff; border-radius: 9px 9px 0 0; cursor: pointer; }
-    .box.min header { border-radius: 9px; }
-    header .sp { flex: 1; }
-    .corpo { overflow: auto; padding: 8px 10px 10px; display: grid; gap: 8px; }
-    .quem { font-size: 12.5px; }
-    .quem b { font-size: 13.5px; }
-    .muted { opacity: .75; font-size: 12px; }
-    .tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: #eef1f4; color: #424a53; }
-    .tag.cozinha { background: #fde8d7; color: #8a3b00; } .tag.atendente { background: #dcecff; color: #0b4a8f; }
-    select, input { font: inherit; font-size: 12.5px; padding: 3px 6px; border-radius: 5px; border: 1px solid #aebac1; background: transparent; color: inherit; }
-    .box.escuro select option { background: #1f2c34; }
-    .linha { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .sug { padding: 6px 8px; border-radius: 7px; background: #fff8c5; color: #3b2f00; border: 1px solid #e9d68b; }
-    .grupo { display: grid; gap: 4px; }
-    .grupo > span { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
-    button { font: inherit; font-size: 12.5px; text-align: left; padding: 5px 9px; border-radius: 6px; border: 1px solid #aebac1; background: transparent; color: inherit; cursor: pointer; }
-    button:hover { background: rgba(127,127,127,.12); }
-    button.pri { background: #1f883d; border-color: #1f883d; color: #fff; text-align: center; }
-    button.destaque { border-color: #e5a50a; box-shadow: inset 3px 0 0 #e5a50a; }
-    .aviso { padding: 6px 8px; border-radius: 7px; background: #dafbe1; color: #0f3d1c; border: 1px solid #a6e3b4; font-size: 12px; }
-    .aviso.copia { background: #ddf4ff; color: #0b3a66; border-color: #9cd0f5; }
-    footer { display: flex; gap: 6px; justify-content: space-between; }
-    footer button { font-size: 12px; padding: 3px 8px; }
-    textarea { font: 12.5px/1.4 "Segoe UI", Roboto, Arial, sans-serif; width: 100%; box-sizing: border-box; padding: 6px; border-radius: 6px;
-      border: 1px solid #aebac1; background: transparent; color: inherit; resize: vertical; }
-    label.ed { display: grid; gap: 3px; font-size: 12px; }
-  `;
-
-  function htmlWhats() {
-    const ui = ler('pm:ui-whats', { min: false });
-    const chat = chatAberto();
-    const chave = chat ? `${chat.titulo}|${chat.fone}` : '';
-    if (chave !== conversaW) { conversaW = chave; avisoW = null; editorW = false; } // trocou de conversa
-    const escuro = document.body && /\bdark\b/.test(document.body.className) ? ' escuro' : '';
-    const topo = `<header data-a="w-min">🍮 <b>PudiMarin</b> · respostas<span class="sp"></span>${ui.min ? '▴' : '▾'}</header>`;
-    if (!chat) return { cls: `box${escuro}${ui.min ? ' min' : ''}`, html: `${topo}<div class="corpo"><div class="muted">Abra uma conversa.</div></div>` };
-    const cand = candidatoDoChat(chat);
-    const k = cand ? contatos()[cand.id] || {} : {};
-    const sug = sugerirResposta(chat, cand);
-    const enviamosVaga = chat.msgs.some(m => !m.entrada && /se cadastrou em nossa vaga/i.test(m.texto));
-    let quem;
-    if (cand) {
-      const s = situacao(cand, cfg());
-      const u = s.melhor ? unidade(s.melhor.unidade) : null;
-      quem = `<div class="quem"><b>${esc(cand.nome)}</b><div class="linha">
-          ${u ? `<span class="tag ${u.vaga}">${esc(VAGAS[u.vaga])}</span><span>Loja ${esc(u.nome)}</span><span>🚌 ${s.melhor.min} min</span>`
-            : cand.vagas.map(v => `<span class="tag ${v}">${esc(VAGAS[v])}</span>`).join('')}</div>
-        <div class="muted">${esc(cand.endereco || 'sem endereço')}</div>
-        <div class="linha" style="margin-top:4px">Etapa: <select data-w-etapa="${esc(cand.id)}">${ETAPAS.map(([v, r]) => `<option value="${v}" ${(k.etapa || '') === v ? 'selected' : ''}>${r}</option>`).join('')}</select></div></div>`;
-    } else if (enviamosVaga) {
-      quem = '<div class="quem"><b>Candidato da Catho</b><div class="muted">Recebeu a mensagem da vaga, mas não achei o número na lista do filtro.</div></div>';
-    } else {
-      quem = '<div class="quem"><b>Contato fora da lista da Catho</b><div class="muted">Ex.: interessados no freelancer.</div></div>';
-    }
-    const titulo = id => (RESPOSTAS.find(r => r.id === id) || {}).titulo || id;
-    let sugHtml = '';
-    if (sug === 'salvar-bairro' || (cand && !enderecoSuficiente(cand.endereco))) {
-      sugHtml += `<div class="sug">${cand ? `📍 Bairro da pessoa: <div class="linha"><input class="bairro" value="${esc(bairroDaMensagem(chat))}" placeholder="ex.: Santa Terezinha">
-          <button class="pri" data-a="w-bairro" data-id="${esc(cand.id)}">Salvar e calcular ônibus</button></div>`
-        : '📍 A pessoa respondeu o bairro, mas não está na lista da Catho.'}</div>`;
-    }
-    if (sug && sug !== 'salvar-bairro') sugHtml += `<div class="sug">Sugestão: <b>${esc(titulo(sug))}</b> <button class="pri" data-r="${sug}">Usar</button></div>`;
-    const grupos = [...new Set(RESPOSTAS.map(r => r.grupo))].map(g => `<div class="grupo"><span>${esc(g)}</span>
-        ${RESPOSTAS.filter(r => r.grupo === g).map(r => `<button data-r="${r.id}" class="${r.id === sug ? 'destaque' : ''}">${esc(r.titulo)}</button>`).join('')}
-        ${g === 'Vaga CLT (Catho)' ? UNIDADES.map(u => `<button data-r="vaga:${u.id}">Mandar a mensagem da vaga — ${esc(VAGAS[u.vaga])} (${esc(u.nome)})</button>`).join('') : ''}
-      </div>`).join('');
-    const aviso = avisoW && Date.now() - avisoW.em < 8000 ? `<div class="aviso${avisoW.copia ? ' copia' : ''}">${esc(avisoW.txt)}</div>` : '';
-    const editor = !editorW ? '' : `<div class="grupo"><span>Editar respostas</span>
-        <div class="muted">Pode usar {saudacao} (bom dia / boa tarde / boa noite), {nome} e {cidade}.</div>
-        ${RESPOSTAS.map(r => `<label class="ed"><b>${esc(r.titulo)}</b><textarea data-w-msg="${r.id}" rows="${Math.min(12, respostaTexto(r.id).split('\n').length + 1)}">${esc(respostaTexto(r.id))}</textarea></label>`).join('')}
-        <div class="linha"><button class="pri" data-a="w-salvar">Salvar</button><button data-a="w-padrao">Voltar ao original</button><button data-a="w-editor">Fechar</button></div></div>`;
-    return {
-      cls: `box${escuro}${ui.min ? ' min' : ''}`,
-      html: `${topo}<div class="corpo">${quem}${aviso}${sugHtml}${editor || grupos}
-        <footer><button data-a="w-editor">✏️ Editar respostas</button><button data-a="w-diag">Diagnóstico</button></footer></div>`,
-    };
-  }
-  function renderWhats(forcar) {
-    if (!raizW) return;
-    const foco = raizW.activeElement;
-    if (foco && /^(INPUT|SELECT|TEXTAREA)$/.test(foco.tagName)) return; // não atrapalha quem está digitando
-    const { cls, html } = htmlWhats();
-    if (!forcar && html === assinaturaW) return;
-    assinaturaW = html;
-    const box = raizW.querySelector('.box');
-    box.className = cls;
-    box.innerHTML = html;
-  }
-  async function aoClicarWhats(ev) {
-    const el = ev.target.closest('[data-a], [data-r]');
-    if (!el) return;
-    const chat = chatAberto();
-    const cand = chat && candidatoDoChat(chat);
-    if (el.dataset.r) {
-      const id = el.dataset.r;
-      const cidade = cand && cand.endereco ? cand.endereco.split(',').map(s => s.trim()).find(p => / - [A-Z]{2}$/.test(p)) || cand.endereco : '';
-      const nome = primeiroNome(cand ? cand.nome : chat && !/\d{5}/.test(chat.titulo) ? chat.titulo : '');
-      const bruto = id.startsWith('vaga:') ? mensagens()[id.slice(5)] : respostaTexto(id);
-      const ok = await colocarNaCaixa(preencher(bruto, nome, cidade.replace(/ - [A-Z]{2}$/, '')));
-      const r = RESPOSTAS.find(x => x.id === id);
-      if (cand) mexerContato(cand.id, k => {
-        if (r && r.etapa) k.etapa = r.etapa;
-        else if (!k.etapa && chat.msgs.some(m => m.entrada)) k.etapa = 'respondeu';
-        if (!k.feito) { k.feito = true; k.em = Date.now(); }
-      });
-      avisoW = { em: Date.now(), copia: !ok, txt: ok ? 'Pronto: a resposta está na caixa de mensagem. Confira e aperte Enter.'
-        : 'Copiei a resposta. Clique na caixa de mensagem e aperte Ctrl+V.' };
-      renderWhats(true);
-      return;
-    }
-    const a = el.dataset.a;
-    if (a === 'w-min') { const ui = ler('pm:ui-whats', { min: false }); gravar('pm:ui-whats', { ...ui, min: !ui.min }); renderWhats(true); }
-    else if (a === 'w-editor') { editorW = !editorW; renderWhats(true); }
-    else if (a === 'w-salvar') {
-      const novas = {};
-      raizW.querySelectorAll('textarea[data-w-msg]').forEach(t => { novas[t.dataset.wMsg] = t.value.replace(/\r/g, ''); });
-      gravar(K.respostas, novas);
-      editorW = false; avisoW = { em: Date.now(), txt: 'Respostas salvas.' }; renderWhats(true);
-    }
-    else if (a === 'w-padrao') { if (confirm('Voltar todas as respostas para o texto original?')) { gravar(K.respostas, {}); renderWhats(true); } }
-    else if (a === 'w-bairro') {
-      const b = (raizW.querySelector('input.bairro') || {}).value || '';
-      if (!b.trim()) return;
-      mexerCandidato(el.dataset.id, x => {
-        const partes = (x.endereco || '').split(',').map(s => s.trim()).filter(Boolean);
-        const cid = partes.find(p => / - [A-Z]{2}$/.test(p)) || partes[partes.length - 1] || '';
-        x.endereco = [b.trim(), cid].filter(Boolean).join(', ');
-        delete x.rota;
-      });
-      processarFila();
-      avisoW = { em: Date.now(), txt: 'Bairro salvo. O tempo de ônibus aparece em instantes (o Google Maps abre em segundo plano).' };
-      renderWhats(true);
-    }
-    else if (a === 'w-diag') {
-      const main = document.querySelector('#main');
-      const ultimas = main ? [...main.querySelectorAll('.message-in, .message-out')].slice(-2) : [];
-      const cx = caixaDeMensagem();
-      GM_setClipboard(JSON.stringify({
-        versao: VERSAO, pagina: 'web.whatsapp.com', conversaAberta: !!main, titulo: mascarar(chat ? chat.titulo : ''),
-        achouTelefone: !!(chat && chat.fone), achouCandidato: !!cand, mensagens: chat ? { recebidas: chat.msgs.filter(m => m.entrada).length, enviadas: chat.msgs.filter(m => !m.entrada).length } : null,
-        sugestao: chat ? sugerirResposta(chat, cand) : null, caixaDeMensagem: cx ? esqueletoHtml(cx) : null,
-        cabecalho: main && main.querySelector('header') ? esqueletoHtml(main.querySelector('header')) : null,
-        ultimasMensagens: ultimas.map(m => esqueletoHtml(m)),
-      }, null, 1), 'text');
-      avisoW = { em: Date.now(), copia: true, txt: 'Diagnóstico copiado (sem os textos das conversas). Cole no chat com o Claude.' };
-      renderWhats(true);
-    }
-  }
-  function aoMudarWhats(ev) {
-    const id = ev.target.dataset && ev.target.dataset.wEtapa;
-    if (!id) return;
-    const v = ev.target.value;
-    mexerContato(id, k => { k.etapa = v; if (v && !k.feito) { k.feito = true; k.em = Date.now(); } });
-    ev.target.blur();
-    renderWhats(true);
-  }
-  function iniciarWhats() {
-    if (!document.body) return;
-    const host = document.createElement('div');
-    host.id = 'pm-whats';
-    document.body.appendChild(host);
-    raizW = host.attachShadow({ mode: 'open' });
-    raizW.innerHTML = `<style>${CSS_WHATS}</style><div class="box"></div>`;
-    raizW.addEventListener('click', aoClicarWhats);
-    raizW.addEventListener('change', aoMudarWhats);
-    let espera = null;
-    new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(() => renderWhats(false), 500); })
-      .observe(document.body, { childList: true, subtree: true, characterData: true });
-    for (const k of [K.cand, K.contatos, K.respostas]) {
-      try { GM_addValueChangeListener(k, (n, velho, novo, remoto) => { if (remoto) renderWhats(true); }); } catch (e) { /* ignora */ }
-    }
-    setInterval(processarFila, 6000); // bairro salvo aqui também ganha tempo de ônibus
-    setInterval(() => renderWhats(false), 4000); // apaga avisos antigos
-    renderWhats(true);
-  }
-
   // ------------------------------------------------------------------ início
   function corrigirMarcasErradas() {
     if ((ler('pm:migracao', 0) || 0) >= 33) return;
@@ -2094,7 +1773,6 @@
     setTimeout(verificarAgenda, 8000);
     setInterval(verificarAgenda, 60e3);
   }
-  const comecar = EH_WHATS ? iniciarWhats : iniciar;
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar, { once: true });
-  else comecar();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true });
+  else iniciar();
 })();
