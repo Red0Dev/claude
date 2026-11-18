@@ -42,6 +42,34 @@ Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vag
 currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
 agradecer". Ajuste à vontade em ✏️ Editar.
 
+## ✨ Respostas escritas pela IA (Claude)
+
+Além das respostas prontas, o quadro pode pedir ao **Claude** (IA da Anthropic) que escreva a resposta lendo a
+conversa. A IA conhece as vagas, os endereços, os salários e o seu jeito de escrever (inclusive as suas
+respostas prontas). Quando perguntam algo fora disso, ela diz que vai verificar com o responsável, em vez de
+inventar.
+
+**Ativar (uma vez):**
+1. Crie uma conta em https://console.anthropic.com e coloque crédito (cobrança por uso, em dólar).
+2. Em **API Keys**, crie uma chave (começa com `sk-ant-`).
+3. Recomendado: em **Limits**, defina um limite de gasto mensal (por exemplo, US$ 10).
+4. No WhatsApp Web, clique em **✨ Ativar respostas com IA**, cole a chave e clique em **Salvar**.
+
+**Usar:**
+- Clique em **✨ Escrever com IA**. A resposta entra na caixa de mensagem; você confere e aperta Enter.
+- Para direcionar, escreva no campo antes de clicar. Exemplos: "explicar o horário", "marcar entrevista
+  quinta às 10h", "dizer que a vaga de domingo já foi preenchida". Enter no campo também gera.
+- **↻ Outra versão** pede um texto diferente.
+
+**Custo:** com o modelo padrão (Claude Opus 5.5), cada resposta custa por volta de US$ 0,01 a 0,02. Em
+**Todas as respostas ▾ → ⚙️ IA** dá para ver o gasto estimado do mês e trocar o modelo: Claude Sonnet 5.5 sai
+pela metade do preço e Claude Haiku 5.5 é bem mais barato, mas escreve com menos cuidado.
+
+**Privacidade:** para escrever, o script manda para a API da Anthropic o texto das últimas 20 mensagens, o
+primeiro nome da pessoa e o assunto identificado. O telefone não é enviado. A chave fica guardada só neste
+navegador. Como o texto dos candidatos passa por um serviço externo, avalie se precisa avisar isso no seu
+processo seletivo (LGPD).
+
 ## Se algo não funcionar
 
 O WhatsApp Web muda de vez em quando. Se o quadro não aparecer, não reconhecer a conversa ou o texto não
