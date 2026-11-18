@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      3.2
+// @version      3.3
 // @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
@@ -38,7 +38,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '3.2';
+  const VERSAO = '3.3';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -492,8 +492,20 @@
     const up = lista.find(e => e !== down && !DICA_DOWN.test(dica(e)) && DICA_UP.test(dica(e)));
     return up && down ? { up, down } : { up: lista[0], down: lista[1] };
   }
-  // "Aparência" do botão sem as palavras que diferem entre 👍 e 👎. Se 👍 e 👎 estão iguais,
-  // ninguém avaliou ainda. Se diferem, alguém já avaliou (e o script não mexe).
+  // Já avaliado? Só conta um sinal de "marcado" no 👍 ou no 👎 (active, selected, aria-pressed…).
+  // Comparar os dois botões não serve: na Catho o 👎 tem classes a mais ("out-profile").
+  // Na Catho, quem é avaliado sai da lista "Candidatos" e vai para Favoritos ou Fora do perfil.
+  const ESTADO_AVALIADO = /(^|[\s_-])(active|ativo|ativa|selected|selecionad[oa]|checked|marcad[oa]|liked|disliked|voted|evaluated|avaliad[oa]|is-on|filled)(?=$|[\s_-])/i;
+  function jaAvaliado(b) {
+    for (const el of [b.up, b.down]) {
+      if (!el) continue;
+      for (const e of [el, el.parentElement, el.querySelector('svg, i, img, span')].filter(Boolean)) {
+        if (ESTADO_AVALIADO.test(classeDe(e)) || e.getAttribute('aria-pressed') === 'true' || e.getAttribute('aria-checked') === 'true') return true;
+      }
+    }
+    return false;
+  }
+  // "Aparência" de um botão: serve para ver se o clique no 👍 mudou alguma coisa.
   const limparClasse = s => String(s || '').toLowerCase()
     .replace(/dislike|unlike|like|thumbs?|positiv[eo]?|negativ[eo]?|nao-?gostei|gostei|\bup\b|\bdown\b|-up\b|-down\b|_up\b|_down\b/g, ' ')
     .split(/\s+/).filter(Boolean).sort().join(' ');
@@ -1006,7 +1018,7 @@
       if (x.curtidas && x.curtidas[vaga]) continue;
       const b = botoesAvaliacao(k);
       if (!b.up) { logar(`Não achei o 👍 de ${x.nome}`); continue; }
-      if (aparencia(b.up) !== aparencia(b.down)) {
+      if (jaAvaliado(b)) {
         jaAvaliados++;
         mexerCandidato(k.id, y => { y.curtidas = { ...(y.curtidas || {}), [vaga]: { em: Date.now(), como: 'já estava avaliado' } }; });
         continue;
@@ -1049,7 +1061,7 @@
       if (parou()) return encerrarParado();
       const k2 = acharCards().find(x => x.id === p.k.id) || p.k; // a página pode ter redesenhado o cartão
       const b = botoesAvaliacao(k2);
-      if (!b.up || aparencia(b.up) !== aparencia(b.down)) { logar(`Não cliquei no 👍 de ${p.nome} (botão mudou)`); continue; }
+      if (!b.up || jaAvaliado(b)) { logar(`Não cliquei no 👍 de ${p.nome} (o botão já estava marcado)`); continue; }
       const antes = aparencia(b.up);
       clicar(b.up);
       const confirmado = await esperar(() => aparencia(b.up) !== antes, 4000, 250);
@@ -1437,7 +1449,7 @@
           linkTitulo: mascarar((l.tituloEl.closest('a[href]') || l.tituloEl.querySelector('a[href]') || {}).href || '') })),
         linhaVagaHtml: (() => { const l = ehListaDeVagas() && linhasDeVagas()[0]; return l ? esqueletoHtml(l.linha) : null; })(),
         caminhoAprendido: !!(ler(K.caminho, null) || {}).modelo,
-        achouLike: !!b.up, likeIgualDislike: b.up ? aparencia(b.up) === aparencia(b.down) : null, proximaPagina: !!acharProxima(),
+        achouLike: !!b.up, jaAvaliado: b.up ? jaAvaliado(b) : null, proximaPagina: !!acharProxima(),
         infoExemplo: cards[0] ? mascarar(cards[0].info) : null,
         avalieHtml: cards[0] ? esqueletoHtml(cards[0].ancora.parentElement && cards[0].ancora.parentElement.parentElement) : null,
       },
@@ -1453,7 +1465,19 @@
   }
 
   // ------------------------------------------------------------------ início
+  function corrigirMarcasErradas() {
+    if ((ler('pm:migracao', 0) || 0) >= 33) return;
+    const m = candidatos();
+    let n = 0;
+    for (const x of Object.values(m)) {
+      for (const [vg, c] of Object.entries(x.curtidas || {})) if (c && c.como === 'já estava avaliado') { delete x.curtidas[vg]; n++; }
+    }
+    if (n) gravar(K.cand, m);
+    gravar('pm:migracao', 33);
+  }
+
   function iniciar() {
+    corrigirMarcasErradas();
     montarPainel();
     lerJsonEmbutido();
     processarFila();
