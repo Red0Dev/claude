@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.4
+// @version      1.5
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.4';
+  const VERSAO = '1.5';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -163,6 +163,7 @@
     { id: 'bairro-ok', grupo: 'Geral', titulo: 'Obrigada pelo bairro',
       texto: 'Obrigada pela informação! Vou repassar para o responsável e já te retorno' },
   ];
+  const FREELA = /(free.?la|\bfrila)/; // freelancer, free-lancer, free lancer, freela, frila
   const textoResposta = id => { const r = RESPOSTAS.find(x => x.id === id); return (ler(K.respostas, {}) || {})[id] ?? (r ? r.texto : ''); };
   const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
   function preencher(t, nome) {
@@ -228,7 +229,7 @@
     for (const m of [...c.msgs].reverse()) {
       const t = norm(m.texto);
       if (/(cozinh|producao)/.test(t)) return { catho: false, rotulo: 'Interessado em Auxiliar de Cozinha (produção)' };
-      if (/freela/.test(t)) return { catho: false, rotulo: 'Interessado no freelancer' };
+      if (FREELA.test(t)) return { catho: false, rotulo: 'Interessado no freelancer' };
       if (/(atendente|delivery)/.test(t)) return { catho: false, rotulo: 'Interessado na vaga de atendente' };
     }
     const tudo = norm(c.msgs.map(m => m.texto).join(' '));
@@ -252,8 +253,8 @@
     // respondeu o bairro que você pediu
     if (/informar o seu bairro/.test(ultimaSua)) return 'bairro-ok';
     if (catho) return /(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t) ? 'interessado' : null;
-    const cozinha = /(cozinh|producao)/.test(t), freela = /freela/.test(t), atendente = /(atendente|delivery)/.test(t);
-    const ctxFreela = /freela/.test(conversaToda);
+    const cozinha = /(cozinh|producao)/.test(t), freela = FREELA.test(t), atendente = /(atendente|delivery)/.test(t);
+    const ctxFreela = FREELA.test(conversaToda);
     const mandouFreela = /freelancer fixo/.test(nossas), mandouCozinha = /auxiliar de cozinha \(producao\)/.test(nossas);
     // mandou currículo
     if (pdf || /curriculo/.test(t)) {
