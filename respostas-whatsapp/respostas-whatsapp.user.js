@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.1
+// @version      1.2
 // @description  Sugere e coloca na caixa de mensagem as respostas prontas das vagas (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -22,7 +22,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.1';
+  const VERSAO = '1.2';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui' };
 
   // ------------------------------------------------------------------ utilidades
@@ -111,29 +111,52 @@
     '',
   ].join('\n');
 
+  const COZINHA_VAGA = [
+    '{saudacao}, tudo bem? No momento temos uma vaga de auxiliar de cozinha (produção).',
+    '',
+    '*Unidade Rudge Ramos*',
+    'As principais atividades da função são:',
+    '• Pesagem de ingredientes',
+    '• Preparação de massas e recheios (cookies e pudins)',
+    '• Assar os produtos',
+    '• Limpeza e organização da cozinha',
+    '',
+    'Modelo de contratação: CLT (5x2)',
+    'Horário: segunda a quinta das 8h00 às 18h00 e sexta-feira das 8h00 às 17h00',
+    'Salário: R$ 1.981,04 + VA no cartão multibenefícios de R$ 332,40 + Vale-Transporte',
+    'Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo',
+    '',
+    'Caso te interesse peço que envie o currículo para eu repassar ao responsável',
+  ].join('\n');
+
   const RESPOSTAS = [
     { id: 'interessado', grupo: 'Vaga CLT (Catho)', titulo: 'Tem interesse → próxima etapa',
-      texto: 'Que ótimo, {nome}! Vou repassar para o responsável e já te retorno com os próximos passos do processo seletivo.' },
+      texto: 'Que bom, {nome}! Vou repassar para o responsável e já te retorno com os próximos passos do processo seletivo.' },
     { id: 'sem-interesse', grupo: 'Vaga CLT (Catho)', titulo: 'Sem interesse → agradecer',
-      texto: 'Tudo bem, {nome}, obrigada pelo retorno! Se surgir outra oportunidade, entramos em contato.' },
+      texto: 'Tudo bem, {nome}! Obrigada pelo retorno.' },
     { id: 'vaga-cozinha', grupo: 'Vaga CLT (Catho)', titulo: 'Mensagem da vaga — Auxiliar de Cozinha (Rudge Ramos)', texto: MSG_COZINHA },
     { id: 'vaga-vergueiro', grupo: 'Vaga CLT (Catho)', titulo: 'Mensagem da vaga — Atendente (Vergueiro)',
       texto: msgAtendente('Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo') },
     { id: 'vaga-petropolis', grupo: 'Vaga CLT (Catho)', titulo: 'Mensagem da vaga — Atendente (Nova Petrópolis)',
       texto: msgAtendente('Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo') },
-    { id: 'freela-cv', grupo: 'Freelancer', titulo: 'Vaga disponível → pedir currículo',
+    { id: 'cozinha-cv', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Vaga de Auxiliar de Cozinha → pedir currículo', texto: COZINHA_VAGA },
+    { id: 'freela-cv', grupo: 'Freelancer (atendente)', titulo: 'Vaga disponível → pedir currículo',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
-    { id: 'freela-disp', grupo: 'Freelancer', titulo: 'Vaga disponível → pedir disponibilidade',
+    { id: 'freela-disp', grupo: 'Freelancer (atendente)', titulo: 'Vaga disponível → pedir disponibilidade',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que me informe a sua disponibilidade para eu repassar ao responsável` },
-    { id: 'qual-dia', grupo: 'Freelancer', titulo: 'Qual dia? (dom, seg ou ter)',
+    { id: 'qual-dia', grupo: 'Freelancer (atendente)', titulo: 'Qual dia? (dom, seg ou ter)',
       texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para domingo, segunda e terça. Obrigada!' },
-    { id: 'freela-ok', grupo: 'Freelancer', titulo: 'Está disponível → deixar currículo',
+    { id: 'freela-ok', grupo: 'Geral', titulo: 'Está disponível → deixar currículo',
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
-    { id: 'recebi-cv', grupo: 'Freelancer', titulo: 'Recebi o currículo',
+    { id: 'pedir-cv', grupo: 'Geral', titulo: 'Pedir o currículo',
+      texto: 'Perfeito! Pode me enviar o seu currículo, por favor? Vou repassar para o responsável.' },
+    { id: 'recebi-cv', grupo: 'Geral', titulo: 'Recebi o currículo',
       texto: 'Obrigada pelo interesse, vou repassar seu currículo para o responsável e já te retorno' },
     { id: 'qual-vaga', grupo: 'Geral', titulo: 'Qual vaga?', texto: '{saudacao}, para qual vaga seria?' },
     { id: 'bairro', grupo: 'Geral', titulo: 'Pedir o bairro',
       texto: '{saudacao}, tudo bem? Pode me informar o seu bairro, por favor? Há apenas [cidade] no currículo.' },
+    { id: 'bairro-ok', grupo: 'Geral', titulo: 'Obrigada pelo bairro',
+      texto: 'Obrigada pela informação! Vou repassar para o responsável e já te retorno' },
   ];
   const textoResposta = id => { const r = RESPOSTAS.find(x => x.id === id); return (ler(K.respostas, {}) || {})[id] ?? (r ? r.texto : ''); };
   const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
@@ -197,9 +220,13 @@
       const loja = /Vergueiro/i.test(nossas) ? 'Vergueiro' : /Prestes Maia/i.test(nossas) ? 'Nova Petrópolis' : '';
       return { catho: true, rotulo: `Candidato da Catho — Atendente${loja ? ` · Loja ${loja}` : ''}` };
     }
+    for (const m of [...c.msgs].reverse()) {
+      const t = norm(m.texto);
+      if (/(cozinh|producao)/.test(t)) return { catho: false, rotulo: 'Interessado em Auxiliar de Cozinha (produção)' };
+      if (/freela/.test(t)) return { catho: false, rotulo: 'Interessado no freelancer' };
+      if (/(atendente|delivery)/.test(t)) return { catho: false, rotulo: 'Interessado na vaga de atendente' };
+    }
     const tudo = norm(c.msgs.map(m => m.texto).join(' '));
-    if (/freela|freelancer fixo/.test(tudo)) return { catho: false, rotulo: 'Interessado no freelancer' };
-    if (/(atendente|delivery)/.test(tudo)) return { catho: false, rotulo: 'Interessado na vaga de atendente' };
     if (/(vaga|candidat|curriculo|interess)/.test(tudo)) return { catho: false, rotulo: 'Interessado em vaga' };
     return { catho: false, rotulo: c.msgs.length ? 'Conversa sem assunto de vaga' : 'Conversa nova' };
   }
@@ -214,15 +241,29 @@
     const pdf = novas.some(m => m.pdf);
     const dia = /(domingo|segunda|terca|\bdom\b|\bseg\b|\bter\b)/.test(t);
     if (/(nao tenho (mais )?interesse|sem interesse|nao (vou|posso|consigo)|ja (estou|consegui|arrumei)|desist)/.test(t)) return 'sem-interesse';
+    const ultimaSua = i >= 0 ? norm(msgs[i].texto) : '';
+    const nossas = norm(msgs.filter(m => !m.entrada).map(m => m.texto).join(' '));
+    const conversaToda = norm(msgs.map(m => m.texto).join(' '));
+    // respondeu o bairro que você pediu
+    if (/informar o seu bairro/.test(ultimaSua)) return 'bairro-ok';
     if (catho) return /(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t) ? 'interessado' : null;
-    const freela = /freela/.test(t), atendente = /(atendente|delivery)/.test(t);
-    // mandou currículo: se disse a vaga ou o dia, agradece; se não, pergunta o dia
-    if (pdf || /curriculo/.test(t)) return dia || freela || atendente ? 'recebi-cv' : 'qual-dia';
-    // perguntou se a vaga de freelancer ainda está disponível
+    const cozinha = /(cozinh|producao)/.test(t), freela = /freela/.test(t), atendente = /(atendente|delivery)/.test(t);
+    const ctxFreela = /freela/.test(conversaToda);
+    const mandouFreela = /freelancer fixo/.test(nossas), mandouCozinha = /auxiliar de cozinha \(producao\)/.test(nossas);
+    // mandou currículo
+    if (pdf || /curriculo/.test(t)) {
+      if (dia || cozinha || freela || atendente || mandouCozinha || mandouFreela) return 'recebi-cv';
+      return ctxFreela ? 'qual-dia' : 'qual-vaga';
+    }
+    // vaga de Auxiliar de Cozinha / produção
+    if (cozinha) return mandouCozinha ? 'pedir-cv' : 'cozinha-cv';
+    // vaga de freelancer (atendente)
     if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
-    // quer saber da vaga de freelancer / atendente: manda a descrição
-    if ((freela || atendente) && /(saber|informa|como funciona|detalhe|vaga|interess)/.test(t)) return 'freela-cv';
-    if (freela) return dia ? 'freela-ok' : 'qual-dia';
+    if ((freela || atendente) && !mandouFreela && /(saber|informa|como funciona|detalhe|vaga|interess)/.test(t)) return 'freela-cv';
+    if (freela || mandouFreela) return dia ? 'pedir-cv' : 'qual-dia';
+    if (dia && ctxFreela) return 'pedir-cv';
+    // demonstrou interesse depois da descrição da cozinha
+    if (mandouCozinha && /(interess|quero|sim|pode ser|aceito)/.test(t)) return 'pedir-cv';
     // quer se candidatar sem dizer a vaga
     if (/(candidat|interess|vaga|trabalh|oportunidade)/.test(t)) return 'qual-vaga';
     return null;

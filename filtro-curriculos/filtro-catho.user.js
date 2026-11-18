@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      4.1
+// @version      4.2
 // @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
@@ -38,7 +38,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '4.1';
+  const VERSAO = '4.2';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -95,7 +95,7 @@
   // Diz a vaga pelo texto: só responde se aparecer UMA das duas.
   const classificar = texto => {
     const t = norm(texto);
-    const coz = /cozinh/.test(t);
+    const coz = /cozinh|auxiliar de producao/.test(t); // "Auxiliar de produção" é a mesma vaga
     const ate = /atendent|delivery|entregas? de balc|balconist/.test(t);
     return coz && !ate ? 'cozinha' : ate && !coz ? 'atendente' : null;
   };
@@ -225,7 +225,7 @@
     contexto: /(candidat|curricul|resume|applicant|cv|inscri|talent|profission)/,
   };
   const ehCidade = nk => RX.cidade.test(nk) && !RX.naoCidade.test(nk);
-  const NAO_NOME = /\b(auxiliar|atendente|cozinha|delivery|vaga|vagas|loja|ltda|eireli|empresa|restaurante|sao paulo|sao bernardo|santo andre|sao caetano|diadema|maua|ribeirao pires|rio grande da serra|guarulhos|osasco|brasil)\b/;
+  const NAO_NOME = /\b(auxiliar|atendente|cozinha|producao|delivery|vaga|vagas|loja|ltda|eireli|empresa|restaurante|sao paulo|sao bernardo|santo andre|sao caetano|diadema|maua|ribeirao pires|rio grande da serra|guarulhos|osasco|brasil)\b/;
   const nomePessoa = v => typeof v === 'string' && /^[A-Za-zÀ-ÿ'´`.\- ]{5,80}$/.test(v.trim()) && v.trim().split(/\s+/).length >= 2 && !NAO_NOME.test(norm(v));
   const textoDe = v => {
     if (v == null) return '';

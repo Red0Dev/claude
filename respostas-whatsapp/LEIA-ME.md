@@ -27,7 +27,10 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
     ("Boa tarde, para qual vaga seria?");
   - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (dom, seg ou ter)**;
   - manda o currículo (PDF) dizendo a vaga ou o dia → **Recebi o currículo**;
-  - cita uma vaga sem resposta pronta (ex.: "Auxiliar de produção") → sem sugestão; escolha na lista ou escreva.
+  - fala em **Auxiliar de Cozinha ou "Auxiliar de produção"** (é a mesma vaga) → **Vaga de Auxiliar de Cozinha →
+    pedir currículo** (descrição da vaga da Rudge Ramos). Se mostrar interesse depois → **Pedir o currículo**;
+  - depois da descrição do freelancer, diz o dia → **Pedir o currículo**; só diz que tem interesse → **Qual dia?**;
+  - responde o bairro que você pediu → **Obrigada pelo bairro**.
 - **Todas as respostas ficam em botões**, inclusive as 3 mensagens das vagas CLT e a mensagem do freelancer
   em duas versões (pedindo currículo ou disponibilidade).
 - **{saudacao}** vira "Bom dia", "Boa tarde" ou "Boa noite" pelo horário. **{nome}** vira o primeiro nome:
@@ -35,7 +38,9 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
 - Em **Pedir o bairro**, troque o **[cidade]** pela cidade que está no currículo antes de enviar.
 - **✏️ Editar respostas** muda qualquer texto. **Voltar ao original** desfaz.
 
-"Tem interesse → próxima etapa" e "Sem interesse → agradecer" são sugestões; ajuste para o seu jeito.
+Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vaga de Auxiliar de Cozinha → pedir
+currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
+agradecer". Ajuste à vontade em ✏️ Editar.
 
 ## Se algo não funcionar
 
