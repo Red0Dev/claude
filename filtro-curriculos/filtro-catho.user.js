@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      3.3
+// @version      3.4
 // @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
@@ -38,7 +38,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '3.3';
+  const VERSAO = '3.4';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -65,7 +65,7 @@
   const K = {
     cand: 'pm:candidatos', cfg: 'pm:config', ui: 'pm:ui', worker: 'pm:worker', varredura: 'pm:varredura',
     mapsPedidos: 'pm:maps:pedidos', mapsRes: 'pm:maps:resultados', mapsVivo: 'pm:maps:vivo', mapsAbertura: 'pm:maps:abertura',
-    caminho: 'pm:caminho-inscritos', vagasIds: 'pm:vagas-ids',
+    caminho: 'pm:caminho-inscritos', vagasIds: 'pm:vagas-ids', contatos: 'pm:contatos', msgs: 'pm:mensagens',
   };
   const CFG_PADRAO = { chave: '', limite: 45, saida: '08:00', vagaPagina: '', diario: true, hora: '09:00', pegarWhats: true, curtirConfirmado: false, incluirDesativadas: false };
   const W = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
@@ -335,6 +335,7 @@
         delete novo.rota;
       }
       if (a.vaga && !novo.vagas.includes(a.vaga)) { novo.vagas = [...novo.vagas, a.vaga]; delete novo.rota; }
+      if (a.link && novo.link !== a.link) novo.link = a.link;
       if (JSON.stringify(novo) !== JSON.stringify(atual)) { mapa[id] = novo; mudou = true; }
     }
     if (mudou) { salvarCandidatos(mapa); processarFila(); }
@@ -460,13 +461,15 @@
     const fones = [...card.querySelectorAll('a[href*="whatsapp" i], a[href*="wa.me" i]')]
       .map(a => { const mm = (a.getAttribute('href') || '').match(/(?:phone=|wa\.me\/)\+?(\d{10,13})/i); return mm ? limparFone(mm[1]) : null; })
       .filter(Boolean);
-    return { nome: nomeEl ? texto(nomeEl) : null, cidade: m ? m[1] : '', uf: m ? m[2] : '', bairro: m && m[3] ? m[3] : '', info: linha, fones };
+    const aNome = nomeEl && (nomeEl.closest('a[href]') || nomeEl.querySelector('a[href]'));
+    const link = aNome && !/^(#|javascript)/i.test(aNome.getAttribute('href') || '#') ? aNome.href : null;
+    return { nome: nomeEl ? texto(nomeEl) : null, cidade: m ? m[1] : '', uf: m ? m[2] : '', bairro: m && m[3] ? m[3] : '', info: linha, fones, link };
   }
 
   function lerCards(vaga) {
     const cards = acharCards();
     const v = vaga || vagaDaPagina();
-    registrar(cards.map(c => ({ nome: c.nome, acc: { fones: c.fones || [], bairro: c.bairro, cidade: c.cidade, uf: c.uf }, vaga: v })), 'lista');
+    registrar(cards.map(c => ({ nome: c.nome, link: c.link, acc: { fones: c.fones || [], bairro: c.bairro, cidade: c.cidade, uf: c.uf }, vaga: v })), 'lista');
     diag.capturados.lista = Math.max(diag.capturados.lista || 0, cards.length);
     return cards;
   }
@@ -1117,6 +1120,165 @@
     iniciarVerificacao(false);
   }
 
+  // ------------------------------------------------------------------ contatos (WhatsApp com a mensagem da vaga)
+  // A mensagem depende da loja: Auxiliar de Cozinha → Rudge Ramos; Atendente → Nova Petrópolis ou Vergueiro
+  // (mesmo texto, só muda o endereço). Dá para editar em 📋 Contatos → ✏️ Mensagens. {nome} vira o primeiro nome.
+  const MSG_COZINHA = [
+    'Oi! Tudo bem? Aqui é da PudiMarin.',
+    'Você se cadastrou em nossa vaga de Auxiliar de Cozinha na Catho',
+    '',
+    'As principais atividades da função são:',
+    '• Pesagem de ingredientes',
+    '• Preparação de massas e recheios (cookies e pudins)',
+    '• Assar os produtos',
+    '• Limpeza e organização da cozinha',
+    '',
+    'Modelo de contratação: CLT (5x2)',
+    '',
+    'Horário:',
+    'Segunda a quinta das 8h00 às 18h00',
+    'Sexta-feira das 8h00 às 17h00',
+    '',
+    'Salário: R$ 1.981,04',
+    'VA no cartão multibenefícios: R$ 332,40',
+    'Vale-Transporte',
+    '',
+    'Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo',
+    '',
+    'Gostaríamos de confirmar se você tem interesse nessas condições',
+    '',
+    'Se estiver de acordo, seguimos para a próxima etapa do processo seletivo',
+    '',
+    'Fico no aguardo da sua resposta',
+  ].join('\n');
+  const msgAtendente = endereco => [
+    'Oi! Tudo bem? Aqui é da PudiMarin.',
+    'Você se cadastrou em nossa vaga de Atendente na Catho',
+    '',
+    'As principais atividades da função são:',
+    '• Atendimento ao cliente e caixa',
+    '• Receber pedidos via aplicativo',
+    '• Preparar os pedidos de forma ágil e organizada',
+    '• Organizar e conferir os pedidos antes da entrega',
+    '• Controlar o estoque',
+    '• Responder os clientes via WhatsApp',
+    '',
+    'Modelo de contratação: CLT (6x1)',
+    'Horário:',
+    '6x na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30',
+    '',
+    'Salário: R$ 2.076,97',
+    'VA no cartão multibenefícios: R$ 400,00',
+    'Vale transporte',
+    '',
+    `Endereço: ${endereco}`,
+    '',
+    'Gostaríamos de confirmar se você tem interesse nessas condições.',
+    'Se estiver de acordo, seguimos para a próxima etapa do processo seletivo.',
+    '',
+    'Fico no aguardo da sua resposta',
+  ].join('\n');
+  const MENSAGENS_PADRAO = {
+    rudge: MSG_COZINHA,
+    novapetropolis: msgAtendente('Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo'),
+    vergueiro: msgAtendente('Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo'),
+  };
+  const mensagens = () => ({ ...MENSAGENS_PADRAO, ...ler(K.msgs, {}) });
+  // Marcações de contato ficam separadas dos candidatos, para a verificação diária nunca apagar nada.
+  const contatos = () => ler(K.contatos, {});
+  function mexerContato(id, fn) {
+    const m = contatos();
+    m[id] = { ...(m[id] || {}) };
+    fn(m[id]);
+    gravar(K.contatos, m);
+    agendarRender();
+  }
+  function textoMensagem(x, uid) {
+    const p = String(x.nome || '').trim().split(/\s+/)[0] || '';
+    const primeiro = p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '';
+    return (mensagens()[uid] || '').replace(/\{nome\}/gi, primeiro);
+  }
+  // Link do WhatsApp Web (abre sempre na mesma aba "pm-whatsapp" do navegador) já com a mensagem.
+  function linkWhats(x, uid) {
+    const fone = whats(x) || (x.fones || [])[0];
+    if (!fone) return null;
+    return `https://web.whatsapp.com/send?phone=55${fone}${uid ? `&text=${encodeURIComponent(textoMensagem(x, uid))}` : ''}`;
+  }
+
+  let contatosAbertos = /#pm-contatos/.test(location.hash), editandoMsgs = false;
+  const filtroContatos = { mostrar: 'faltam', vaga: '' };
+  function htmlContatos() {
+    const c = cfg(), cont = contatos();
+    const todos = Object.values(candidatos()).map(x => ({ x, s: situacao(x, c), k: cont[x.id] || {} })).filter(i => i.s.grupo === 'dentro');
+    const feitos = todos.filter(i => i.k.feito).length;
+    let lista = todos;
+    if (filtroContatos.mostrar === 'faltam') lista = lista.filter(i => !i.k.feito);
+    else if (filtroContatos.mostrar === 'feitos') lista = lista.filter(i => i.k.feito);
+    if (filtroContatos.vaga) lista = lista.filter(i => unidade(i.s.melhor.unidade).vaga === filtroContatos.vaga);
+    const ordem = id => UNIDADES.findIndex(u => u.id === id);
+    lista.sort((a, b) => (a.k.feito ? 1 : 0) - (b.k.feito ? 1 : 0) || ordem(a.s.melhor.unidade) - ordem(b.s.melhor.unidade) || a.s.melhor.min - b.s.melhor.min);
+    const botao = (grupo, v, rotulo) => `<button data-a="filtro" data-g="${grupo}" data-v="${v}" class="${filtroContatos[grupo] === v ? 'on' : ''}">${rotulo}</button>`;
+    const linhaContato = ({ x, s, k }) => {
+      const u = unidade(s.melhor.unidade);
+      const lw = linkWhats(x, u.id);
+      const w = whats(x);
+      const curtida = x.curtidas && x.curtidas[u.vaga] && !/avaliado/.test(x.curtidas[u.vaga].como);
+      const fone = w || (x.fones || [])[0];
+      const zap = lw ? `<a class="zap" href="${esc(lw)}" target="pm-whatsapp" data-a="whats" data-id="${esc(x.id)}">💬 ${esc(formatarFone(fone))}${w ? '' : ' (fixo)'}</a>
+          ${k.whatsEm ? `<div class="mini-info">aberto ${esc(ddmm(k.whatsEm))} ${esc(hhmm(k.whatsEm))}</div>` : ''}`
+        : `<span class="sem">sem número ainda</span><div class="mini-info">clique em "contatos" no cartão da pessoa na Catho</div>`;
+      return `<tr class="${k.feito ? 'feito' : ''}" data-busca="${esc(norm(`${x.nome} ${x.endereco} ${u.nome}`))}">
+        <td class="ck"><label><input type="checkbox" data-contatado="${esc(x.id)}" ${k.feito ? 'checked' : ''}>
+          ${k.feito ? `<span class="mini-info">${esc(ddmm(k.em || Date.now()))}</span>` : ''}</label></td>
+        <td><b>${esc(x.nome)}</b>${curtida ? ' <span class="tag like">👍</span>' : ''}
+          <div class="mini-info">${esc(x.endereco)}${x.link ? ` · <a href="${esc(x.link)}" target="_blank" rel="noopener">abrir na Catho</a>` : ''}</div></td>
+        <td><span class="tag ${u.vaga}">${esc(VAGAS[u.vaga])}</span><div class="mini-info">Loja ${esc(u.nome)}</div></td>
+        <td class="num">🚌 ${s.melhor.min} min</td>
+        <td>${zap}</td>
+        <td><input type="text" class="obs" data-obs="${esc(x.id)}" value="${esc(k.obs || '')}" placeholder="anotação…"></td>
+      </tr>`;
+    };
+    const editor = !editandoMsgs ? '' : `<div class="editor">
+        <p>Mensagem que vai pronta no WhatsApp, por loja. Use <b>{nome}</b> se quiser o primeiro nome da pessoa.</p>
+        ${UNIDADES.map(u => `<label><b>${esc(VAGAS[u.vaga])} — Loja ${esc(u.nome)}</b>
+          <textarea data-msg="${u.id}" rows="12">${esc(mensagens()[u.id])}</textarea></label>`).join('')}
+        <div class="acoes"><button class="sim" data-a="salvar-msgs">Salvar mensagens</button><button data-a="padrao-msgs">Voltar ao texto original</button>
+          <button data-a="editar-msgs">Fechar editor</button></div></div>`;
+    return `<div class="topo">
+        <b>📋 Contatos — candidatos a até ${esc(c.limite)} min de ônibus</b>
+        <span class="cont">${todos.length} perto · ${feitos} contatado${feitos === 1 ? '' : 's'} · ${todos.length - feitos} falta${todos.length - feitos === 1 ? '' : 'm'}</span>
+        <button data-a="fechar-contatos">✕ Fechar</button></div>
+      <div class="filtros">
+        ${botao('mostrar', 'faltam', 'Falta contatar')}${botao('mostrar', 'feitos', 'Contatados')}${botao('mostrar', 'todos', 'Todos')}
+        <span class="sep"></span>
+        ${botao('vaga', '', 'Todas as vagas')}${botao('vaga', 'cozinha', 'Auxiliar de Cozinha')}${botao('vaga', 'atendente', 'Atendente')}
+        <input type="search" class="busca" placeholder="Buscar nome ou bairro">
+        <span class="sp"></span>
+        <button data-a="editar-msgs">✏️ Mensagens</button><button data-a="csv">Baixar planilha</button>
+      </div>
+      ${editor}
+      <p class="dica">Clique no número para abrir o WhatsApp Web com a mensagem da vaga pronta (é só apertar Enter lá).
+        Ao abrir, a pessoa já fica marcada como contatada; desmarque se não enviou.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Contatado</th><th>Nome</th><th>Vaga</th><th>Ônibus</th><th>WhatsApp</th><th>Anotação</th></tr></thead>
+        <tbody>${lista.length ? lista.map(linhaContato).join('')
+          : `<tr><td colspan="6" class="vazio">${todos.length ? 'Ninguém nesta lista.' : 'Ainda não há candidatos perto. Rode "Verificar agora" no painel.'}</td></tr>`}</tbody>
+      </table></div>`;
+  }
+
+  // Quando VOCÊ clica em "contatos" num cartão da Catho, o número que aparecer fica guardado para essa pessoa.
+  function guardarNumeroAoAbrirContatos(ev) {
+    if (souVerificador()) return;
+    const alvo = ev.target && ev.target.closest && ev.target.closest('a, button');
+    if (!alvo || !/^contatos?$/i.test(texto(alvo))) return;
+    const card = lerCards().find(k => k.card.contains(alvo));
+    if (!card) return;
+    const antes = new Set(fonesNaTela());
+    esperar(() => { const f = fonesNaTela().filter(x => !antes.has(x)); return f.length ? f : null; }, 10000, 400).then(novos => {
+      if (novos) mexerCandidato(card.id, y => { y.fones = [...new Set([...(y.fones || []), ...novos])]; });
+    });
+  }
+
   // ------------------------------------------------------------------ painel
   let raiz = null, renderAgendado = false;
   const agendarRender = () => { if (renderAgendado) return; renderAgendado = true; setTimeout(() => { renderAgendado = false; render(); }, 60); };
@@ -1175,6 +1337,41 @@
     footer button { font: inherit; font-size: 12px; padding: 5px 9px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; color: #1f2328; }
     footer button.pri { background: #1f883d; border-color: #1f883d; color: #fff; }
     footer .sp { flex: 1; }
+    .tela { position: fixed; inset: 0; z-index: 2147483647; background: #f6f8fa; color: #1f2328; overflow: auto;
+      font: 14px/1.45 "Segoe UI", Roboto, Arial, sans-serif; padding-bottom: 40px; }
+    .tela[hidden] { display: none; }
+    .tela .topo { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #7a2e55; color: #fff; }
+    .tela .topo b { font-size: 16px; }
+    .tela .topo .cont { margin-left: auto; font-size: 13px; opacity: .9; }
+    .tela .topo button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid rgba(255,255,255,.6); background: transparent; color: #fff; border-radius: 6px; cursor: pointer; }
+    .tela .filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 24px 0; }
+    .tela .filtros button { font: inherit; font-size: 13px; padding: 5px 10px; border: 1px solid #d0d7de; background: #fff; border-radius: 6px; cursor: pointer; color: #1f2328; }
+    .tela .filtros button.on { background: #7a2e55; border-color: #7a2e55; color: #fff; }
+    .tela .filtros .sep { width: 10px; }
+    .tela .filtros .sp { flex: 1; }
+    .tela .busca { font: inherit; font-size: 13px; padding: 5px 10px; border: 1px solid #d0d7de; border-radius: 6px; min-width: 200px; }
+    .tela .dica { margin: 10px 24px 0; color: #57606a; font-size: 13px; }
+    .tela .tabela { margin: 10px 24px 0; overflow-x: auto; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; }
+    .tela table { width: 100%; border-collapse: collapse; }
+    .tela th { text-align: left; font-size: 12px; color: #57606a; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #d0d7de; background: #f6f8fa; white-space: nowrap; }
+    .tela td { padding: 9px 10px; border-bottom: 1px solid #eaeef2; vertical-align: top; }
+    .tela tbody tr:last-child td { border-bottom: 0; }
+    .tela tr.feito td { background: #f3faf5; color: #57606a; }
+    .tela td.ck { width: 80px; text-align: center; }
+    .tela td.ck input { width: 18px; height: 18px; cursor: pointer; }
+    .tela td.num { white-space: nowrap; font-weight: 600; }
+    .tela .mini-info { font-size: 12px; color: #57606a; margin-top: 2px; }
+    .tela .mini-info a { color: #0969da; }
+    .tela a.zap { display: inline-block; padding: 5px 10px; border-radius: 6px; background: #1f883d; color: #fff; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .tela tr.feito a.zap { background: #6e7781; }
+    .tela .sem { color: #9a6700; font-weight: 600; }
+    .tela input.obs { font: inherit; font-size: 13px; width: 100%; min-width: 160px; padding: 4px 8px; border: 1px solid #d0d7de; border-radius: 5px; box-sizing: border-box; }
+    .tela .vazio { color: #57606a; text-align: center; padding: 24px; }
+    .tela .editor { margin: 12px 24px 0; padding: 12px; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; display: grid; gap: 10px; }
+    .tela .editor p { margin: 0; color: #57606a; font-size: 13px; }
+    .tela .editor label { display: grid; gap: 4px; font-size: 13px; }
+    .tela .editor textarea { font: 13px/1.4 "Segoe UI", Roboto, Arial, sans-serif; padding: 8px; border: 1px solid #d0d7de; border-radius: 6px; resize: vertical; }
+    .tela .editor .acoes { display: flex; gap: 6px; flex-wrap: wrap; }
   `;
 
   function montarPainel() {
@@ -1183,7 +1380,8 @@
     host.id = 'pm-filtro-catho';
     document.body.appendChild(host);
     raiz = host.attachShadow({ mode: 'open' });
-    raiz.innerHTML = `<style>${CSS}</style><div class="box"></div>`;
+    raiz.innerHTML = `<style>${CSS}</style><div class="box"></div><div class="tela" hidden></div>`;
+    raiz.addEventListener('input', aoDigitar);
     raiz.addEventListener('click', aoClicar);
     raiz.addEventListener('change', aoMudar);
     render();
@@ -1193,7 +1391,7 @@
   function render() {
     if (!raiz) return;
     const foco = raiz.activeElement;
-    if (foco && /^(INPUT|SELECT)$/.test(foco.tagName)) { // não apaga o que está sendo digitado
+    if (foco && /^(INPUT|SELECT|TEXTAREA)$/.test(foco.tagName)) { // não apaga o que está sendo digitado
       foco.addEventListener('blur', agendarRender, { once: true });
       return;
     }
@@ -1215,8 +1413,9 @@
 
     const linha = ({ x, s }) => {
       const w = whats(x);
-      const wHtml = w ? `<a href="https://wa.me/55${w}" target="_blank" rel="noopener">${esc(formatarFone(w))}</a>`
-        : x.fones.length ? `${esc(formatarFone(x.fones[0]))} (fixo)` : 'ainda não pego (fica em "contatos")';
+      const lw = linkWhats(x, s.melhor ? s.melhor.unidade : null);
+      const wHtml = lw ? `<a href="${esc(lw)}" target="pm-whatsapp" data-a="whats" data-id="${esc(x.id)}">${esc(formatarFone(w || x.fones[0]))}${w ? '' : ' (fixo)'}</a>`
+        : 'ainda não pego (fica em "contatos")';
       if (s.melhor) {
         const u = unidade(s.melhor.unidade);
         const curtida = x.curtidas && x.curtidas[u.vaga];
@@ -1289,7 +1488,8 @@
         </nav>
         <ul class="lista">${itens.length ? itens.map(linha).join('') : `<li class="vazio">${lista.length ? 'Ninguém aqui.' : 'Clique em "Verificar agora" ou abra os candidatos de uma vaga na Catho.'}</li>`}</ul>
         <footer>
-          <button class="pri" data-a="copiar">Copiar lista</button>
+          <button class="pri" data-a="contatos">📋 Contatos</button>
+          <button data-a="copiar">Copiar lista</button>
           <button data-a="csv">Baixar planilha</button>
           <button data-a="capturar" title="Lê o currículo que está aberto na tela">Ler esta página</button>
           <span class="sp"></span>
@@ -1297,10 +1497,41 @@
           <button data-a="limpar">Limpar</button>
         </footer>
       </div>`;
+    renderTela();
+  }
+
+  let rascunhoMsgs = null, buscaContatos = '';
+  function renderTela() {
+    const tela = raiz.querySelector('.tela');
+    if (!contatosAbertos) { tela.hidden = true; tela.innerHTML = ''; return; }
+    if (editandoMsgs) { // guarda o que está sendo escrito nas mensagens antes de redesenhar
+      const tas = tela.querySelectorAll('textarea[data-msg]');
+      if (tas.length) { rascunhoMsgs = {}; tas.forEach(t => { rascunhoMsgs[t.dataset.msg] = t.value; }); }
+    }
+    tela.hidden = false;
+    tela.innerHTML = htmlContatos();
+    if (editandoMsgs && rascunhoMsgs) tela.querySelectorAll('textarea[data-msg]').forEach(t => { if (rascunhoMsgs[t.dataset.msg] != null) t.value = rascunhoMsgs[t.dataset.msg]; });
+    const busca = tela.querySelector('.busca');
+    if (busca) busca.value = buscaContatos;
+    aplicarBusca();
+  }
+  function aplicarBusca() {
+    const q = norm(buscaContatos);
+    raiz.querySelectorAll('.tela tbody tr[data-busca]').forEach(tr => { tr.style.display = !q || tr.dataset.busca.includes(q) ? '' : 'none'; });
+  }
+  function aoDigitar(ev) {
+    if (ev.target.classList && ev.target.classList.contains('busca')) { buscaContatos = ev.target.value; aplicarBusca(); }
   }
 
   function aoMudar(ev) {
-    const campo = ev.target.dataset && ev.target.dataset.c;
+    const d = ev.target.dataset || {};
+    if (d.contatado) {
+      const marcado = ev.target.checked;
+      mexerContato(d.contatado, k => { k.feito = marcado; k.em = marcado ? Date.now() : null; });
+      return;
+    }
+    if (d.obs) { const v = ev.target.value; mexerContato(d.obs, k => { k.obs = v; }); return; }
+    const campo = d.c;
     if (!campo) return;
     const c = cfg();
     let v = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
@@ -1322,6 +1553,26 @@
     else if (a === 'aba') { gravar(K.ui, { ...ui, aba: el.dataset.v }); render(); }
     else if (a === 'tentar') { erroGeral = ''; gravar(K.mapsAbertura, {}); render(); processarFila(); }
     else if (a === 'verificar') iniciarVerificacao(true);
+    else if (a === 'contatos') { contatosAbertos = true; render(); }
+    else if (a === 'fechar-contatos') {
+      contatosAbertos = false; editandoMsgs = false; rascunhoMsgs = null;
+      if (/#pm-contatos/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+      render();
+    }
+    else if (a === 'filtro') { filtroContatos[el.dataset.g] = el.dataset.v; render(); }
+    else if (a === 'whats') { // o link abre o WhatsApp Web normalmente; aqui só anota
+      mexerContato(el.dataset.id, k => { if (!k.feito) { k.feito = true; k.em = Date.now(); } k.whatsEm = Date.now(); });
+    }
+    else if (a === 'editar-msgs') { editandoMsgs = !editandoMsgs; rascunhoMsgs = null; render(); }
+    else if (a === 'salvar-msgs') {
+      const novas = {};
+      raiz.querySelectorAll('.tela textarea[data-msg]').forEach(t => { novas[t.dataset.msg] = t.value.replace(/\r/g, ''); });
+      gravar(K.msgs, novas);
+      editandoMsgs = false; rascunhoMsgs = null; render();
+    }
+    else if (a === 'padrao-msgs') {
+      if (confirm('Voltar as 3 mensagens para o texto original?')) { gravar(K.msgs, {}); rascunhoMsgs = null; render(); }
+    }
     else if (a === 'parar') { pararVerificacao(); render(); }
     else if (a === 'conf-sim' && confirmar) confirmar(true);
     else if (a === 'conf-nao' && confirmar) confirmar(false);
@@ -1364,7 +1615,9 @@
   function baixarCsv() {
     const c = cfg();
     const cel = v => `"${String(v ?? '').replace(/^([=+\-@])/, "'$1").replace(/"/g, '""')}"`;
-    const linhas = [['Nome', 'Vaga', 'Loja', 'Endereço da loja', 'WhatsApp', 'Ônibus (min)', 'Ônibus (km)', 'Situação', '👍 na Catho', 'Endereço do candidato']];
+    const cont = contatos();
+    const linhas = [['Nome', 'Vaga', 'Loja', 'Endereço da loja', 'WhatsApp', 'Ônibus (min)', 'Ônibus (km)', 'Situação', '👍 na Catho', 'Endereço do candidato',
+      'Contatado', 'Anotação', 'Link do WhatsApp com a mensagem']];
     for (const x of Object.values(candidatos())) {
       const s = situacao(x, c);
       const u = s.melhor ? unidade(s.melhor.unidade) : null;
@@ -1373,7 +1626,8 @@
       linhas.push([x.nome, u ? VAGAS[u.vaga] : x.vagas.map(vg => VAGAS[vg]).join(' / '), u ? u.nome : '', u ? u.endereco : '',
         w ? formatarFone(w) : x.fones.length ? `${formatarFone(x.fones[0])} (fixo)` : '', s.melhor ? s.melhor.min : '', s.melhor && s.melhor.km != null ? String(s.melhor.km).replace('.', ',') : '',
         s.grupo === 'dentro' ? 'dentro do limite' : s.grupo === 'longe' ? 'longe' : s.motivo,
-        curtida ? `${ddmm(curtida.em)} (${curtida.como})` : '', x.endereco]);
+        curtida ? `${ddmm(curtida.em)} (${curtida.como})` : '', x.endereco,
+        (cont[x.id] || {}).feito ? `sim (${ddmm(cont[x.id].em || Date.now())})` : 'não', (cont[x.id] || {}).obs || '', linkWhats(x, u ? u.id : null) || '']);
     }
     const blob = new Blob(['﻿' + linhas.map(l => l.map(cel).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
@@ -1479,6 +1733,7 @@
   function iniciar() {
     corrigirMarcasErradas();
     montarPainel();
+    document.addEventListener('click', guardarNumeroAoAbrirContatos, true);
     lerJsonEmbutido();
     processarFila();
     try { GM_addValueChangeListener(K.cand, (k, velho, novo, remoto) => { if (remoto) agendarRender(); }); } catch (e) { /* ignora */ }

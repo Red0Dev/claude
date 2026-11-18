@@ -70,6 +70,30 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtr
   ela para na hora, sem dar mais nenhum 👍, e só volta a rodar sozinha no dia seguinte. Para desligar de vez,
   desmarque **⚙ Ajustes → Verificar todo dia**.
 
+## 📋 Contatos (para chamar no WhatsApp)
+
+No painel, clique em **📋 Contatos**. Abre uma tela com todos os candidatos que moram a até 45 min de ônibus:
+
+- **Clique no número** e o WhatsApp Web abre no navegador, sempre na mesma aba, com a mensagem da vaga
+  pronta. É só apertar Enter lá. A mensagem muda conforme a loja:
+  - Auxiliar de Cozinha → Rudge Ramos (Av. Ministro Osvaldo Aranha, 232);
+  - Atendente → Nova Petrópolis (Av. Francisco Prestes Maia, 957) ou Vergueiro (Av. Senador Vergueiro, 2123).
+    É o mesmo texto, só muda o endereço.
+- **Contatado**: ao abrir o WhatsApp, a pessoa já fica marcada com a data. Se não chegou a enviar, desmarque.
+  Dá para marcar e desmarcar à mão também.
+- **Anotação**: um campo livre por pessoa (por exemplo, "ligar depois das 14h").
+- **Filtros**: "Falta contatar", "Contatados" e "Todos", por vaga, e busca por nome ou bairro.
+- **✏️ Mensagens**: editar os 3 textos. Escreva **{nome}** onde quiser o primeiro nome da pessoa
+  (por exemplo, "Oi, {nome}! Tudo bem?").
+- **Sem número ainda**: o número só aparece depois que alguém abre "contatos" no cartão da pessoa na Catho.
+  A verificação diária faz isso para quem ganhou 👍. Se você mesmo clicar em "contatos" na Catho, o número
+  também fica guardado.
+- **Baixar planilha**: gera um CSV (abre no Excel ou no Google Planilhas) com as colunas "Contatado",
+  "Anotação" e "Link do WhatsApp com a mensagem".
+
+As marcações ficam guardadas neste navegador, no Tampermonkey. Use sempre o mesmo navegador para trabalhar
+na lista.
+
 ## O painel
 
 - **Até 45 min**: quem está perto, com a loja, o tempo de ônibus e o WhatsApp (o link abre a conversa).
