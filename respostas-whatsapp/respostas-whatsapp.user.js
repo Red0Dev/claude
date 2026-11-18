@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.5
+// @version      1.6
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.5';
+  const VERSAO = '1.6';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -180,13 +180,16 @@
     const titulo = tituloEl ? texto(tituloEl) : '';
     const { itens, como } = acharMensagens(main);
     const msgs = itens.slice(-30).map(({ el, entrada }) => {
-      const corpo = el.querySelector('.copyable-text, [data-pre-plain-text]') || el;
+      const corpo = el.querySelector('.copyable-text, [data-pre-plain-text]');
+      // sem bloco de texto próprio (foto, áudio…), sobra só hora e tamanho do arquivo: descarta isso
+      const semRuido = x => String(x || '').replace(/\b\d{1,2}:\d{2}\b/g, '').replace(/\b\d+([.,]\d+)?\s*(kb|mb|gb)\b/gi, '').trim();
       return {
         entrada,
-        texto: (corpo.innerText || el.innerText || '').trim(),
+        texto: corpo ? (corpo.innerText || '').trim() : semRuido(el.innerText),
         pdf: /\.pdf\b/i.test(el.innerText || '') || !!el.querySelector('[data-icon*="document" i], [data-icon*="pdf" i], [title$=".pdf" i]'),
+        imagem: [...el.querySelectorAll('img, video, canvas')].some(i => { const r = i.getBoundingClientRect(); return r.width > 100 && r.height > 60; }),
       };
-    }).filter(m => m.texto || m.pdf);
+    }).filter(m => m.texto || m.pdf || m.imagem);
     return { main, titulo, msgs, como };
   }
   // O WhatsApp Web muda de tempos em tempos; tenta do jeito mais seguro para o menos seguro.
@@ -244,7 +247,7 @@
     const novas = msgs.slice(i + 1).filter(m => m.entrada);
     if (!novas.length) return null; // a última mensagem é sua
     const t = norm(novas.map(m => m.texto).join(' '));
-    const pdf = novas.some(m => m.pdf);
+    const pdf = novas.some(m => m.pdf), imagem = novas.some(m => m.imagem);
     const dia = /(domingo|segunda|terca|\bdom\b|\bseg\b|\bter\b)/.test(t);
     if (/(nao tenho (mais )?interesse|sem interesse|nao (vou|posso|consigo)|ja (estou|consegui|arrumei)|desist)/.test(t)) return 'sem-interesse';
     const ultimaSua = i >= 0 ? norm(msgs[i].texto) : '';
@@ -253,6 +256,8 @@
     // respondeu o bairro que você pediu
     if (/informar o seu bairro/.test(ultimaSua)) return 'bairro-ok';
     if (catho) return /(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t) ? 'interessado' : null;
+    // mandou foto depois de você pedir o currículo: costuma ser o currículo fotografado
+    if (imagem && !t.trim() && /curriculo/.test(norm(msgs[i] ? msgs[i].texto : ''))) return 'recebi-cv';
     const cozinha = /(cozinh|producao)/.test(t), freela = FREELA.test(t), atendente = /(atendente|delivery)/.test(t);
     const ctxFreela = FREELA.test(conversaToda);
     const mandouFreela = /freelancer fixo/.test(nossas), mandouCozinha = /auxiliar de cozinha \(producao\)/.test(nossas);
@@ -351,7 +356,7 @@ ${prontas}`;
   }
 
   function promptConversa(c, instrucao, anterior) {
-    const linhas = c.msgs.slice(-20).map(m => `${m.entrada ? 'Candidato' : 'PudiMarin'}: ${m.pdf ? '[enviou um arquivo PDF] ' : ''}${m.texto}`).join('\n');
+    const linhas = c.msgs.slice(-20).map(m => `${m.entrada ? 'Candidato' : 'PudiMarin'}: ${m.pdf ? '[enviou um arquivo PDF] ' : ''}${m.imagem ? '[enviou uma imagem] ' : ''}${m.texto}`).join('\n');
     const agora = new Date();
     const dia = agora.toLocaleDateString('pt-BR', { weekday: 'long' });
     const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
