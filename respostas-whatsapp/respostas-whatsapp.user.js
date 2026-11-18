@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.3
+// @version      1.4
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -22,10 +22,12 @@
 // - Pela última mensagem recebida, sugere a resposta. Um clique coloca o texto na caixa de mensagem.
 // - Quem envia é sempre você (Enter). O script nunca envia nada sozinho, para não arriscar o número.
 // - Opcional: "✨ Escrever com IA" pede ao Claude (API da Anthropic, com a sua chave) uma resposta para a conversa.
+// - Sem chave de API: "📋 Copiar para o Claude" copia instruções + conversa para colar no claude.ai, no app
+//   do Claude ou no Claude in Chrome (usa a sua assinatura). Depois é só colar a resposta aqui.
 (() => {
   'use strict';
 
-  const VERSAO = '1.3';
+  const VERSAO = '1.4';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -483,11 +485,12 @@ ${prontas}`;
     const sugHtml = sug ? `<div class="sug">Sugestão: <b>${esc(titulo(sug))}</b> <button class="pri" data-r="${sug}">Usar</button></div>` : '';
     const avisoHtml = aviso ? `<div class="aviso${aviso.copia ? ' copia' : ''}${aviso.erro ? ' erro' : ''}">${esc(aviso.txt)}</div>` : '';
     const cfgIA = iaCfg();
-    const iaHtml = cfgIA.chave
-      ? `<div class="ia"><input class="instr" value="${esc(instrucaoIA)}" placeholder="Pedir algo à IA (opcional), ex.: explicar o horário">
-          <div class="linha"><button class="pri" data-a="ia" ${iaOcupado ? 'disabled' : ''}>${iaOcupado ? '✨ Escrevendo…' : '✨ Escrever com IA'}</button>
-          ${ultimaIA && ultimaIA.conversa === conversa && !iaOcupado ? '<button data-a="ia-outra">↻ Outra versão</button>' : ''}</div></div>`
-      : '<button data-a="config-ia">✨ Ativar respostas com IA</button>';
+    const iaHtml = `<div class="ia"><input class="instr" value="${esc(instrucaoIA)}" placeholder="Pedir algo ao Claude (opcional), ex.: explicar o horário">
+        <div class="linha">${cfgIA.chave
+          ? `<button class="pri" data-a="ia" ${iaOcupado ? 'disabled' : ''}>${iaOcupado ? '✨ Escrevendo…' : '✨ Escrever com IA'}</button>
+            ${ultimaIA && ultimaIA.conversa === conversa && !iaOcupado ? '<button data-a="ia-outra">↻ Outra versão</button>' : ''}`
+          : ''}<button data-a="copiar-claude" title="Copia instruções + conversa (sem o telefone) para colar no Claude">📋 Copiar para o Claude</button></div>
+        ${cfgIA.chave ? '' : '<div class="muted">Cole no claude.ai, no app do Claude ou no Claude in Chrome, copie a resposta e cole aqui. Para a IA escrever direto, use ⚙️ IA.</div>'}</div>`;
     const g = ler(K.gasto, {});
     const doMes = g.mes === new Date().toISOString().slice(0, 7);
     const config = `<div class="grupo"><span>IA (Claude)</span>
@@ -565,6 +568,11 @@ ${prontas}`;
     else if (a === 'editor') { editor = !editor; desenhar(true); }
     else if (a === 'abrir') { if (editor) editor = false; else aberto = !aberto; desenhar(true); }
     else if (a === 'ia' || a === 'ia-outra') gerarComIA(a === 'ia-outra');
+    else if (a === 'copiar-claude' && c) {
+      GM_setClipboard(`${promptSistema()}\n\n---\n\n${promptConversa(c, instrucaoIA.trim(), null)}`, 'text');
+      aviso = { em: Date.now(), copia: true, txt: 'Copiado! Cole no Claude (claude.ai, app ou Claude in Chrome), copie a resposta dele e cole aqui na caixa de mensagem.' };
+      desenhar(true);
+    }
     else if (a === 'config-ia') { configIA = !configIA; desenhar(true); }
     else if (a === 'salvar-ia') {
       const chave = (raiz.querySelector('input.chave') || {}).value || '';

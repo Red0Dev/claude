@@ -42,7 +42,23 @@ Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vag
 currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
 agradecer". Ajuste à vontade em ✏️ Editar.
 
-## ✨ Respostas escritas pela IA (Claude)
+## 📋 Usar o Claude da sua assinatura (sem chave de API)
+
+Se você já usa o Claude (claude.ai, app do Claude ou Claude in Chrome), dá para pedir a resposta a ele sem
+pagar a API à parte:
+
+1. Na conversa do WhatsApp, se quiser, escreva o que precisa no campo do quadro (ex.: "explicar o horário").
+2. Clique em **📋 Copiar para o Claude**. Isso copia as instruções (vagas, regras, seu jeito de escrever, suas
+   respostas prontas) e a conversa, sem o telefone.
+3. Cole numa conversa com o Claude e envie.
+4. Copie a resposta do Claude e cole na caixa de mensagem do WhatsApp. Confira e aperte Enter.
+
+Dica: no claude.ai, crie um **Projeto** "Respostas PudiMarin" e use sempre ele para essas conversas.
+
+Esse caminho tem os passos de copiar e colar porque o claude.ai não pode ser controlado por scripts. Para
+um clique só, use a chave de API (abaixo).
+
+## ✨ Respostas escritas pela IA (Claude), com chave de API
 
 Além das respostas prontas, o quadro pode pedir ao **Claude** (IA da Anthropic) que escreva a resposta lendo a
 conversa. A IA conhece as vagas, os endereços, os salários e o seu jeito de escrever (inclusive as suas
