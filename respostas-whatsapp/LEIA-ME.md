@@ -2,8 +2,9 @@
 
 Script do Tampermonkey, separado do filtro da Catho, que ajuda a responder os candidatos no **WhatsApp Web**.
 
-Ao abrir uma conversa, aparece o quadro **🍮 PudiMarin · respostas** acima da caixa de mensagem. Clique no
-título para recolher. Um clique numa resposta coloca o texto na caixa de mensagem; **você confere e aperta
+Ao abrir uma conversa, aparece um quadro pequeno **🍮 PudiMarin · respostas** no topo da conversa, à direita.
+Ele mostra quem é a pessoa e a resposta sugerida. **Todas as respostas ▾** abre a lista completa. Clique no
+título do quadro para recolher. Um clique numa resposta coloca o texto na caixa de mensagem; **você confere e aperta
 Enter**. O script nunca envia nada sozinho, porque o WhatsApp bane números que mandam mensagens automáticas.
 
 ## Instalar
@@ -20,10 +21,13 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
 - **Sugestão de resposta**, pela última mensagem da pessoa:
   - "tenho interesse" depois da mensagem da vaga da Catho → **Tem interesse → próxima etapa**;
   - "não tenho interesse", "já arrumei"… → **Sem interesse → agradecer**;
-  - pergunta pela vaga ("saber mais", "quero me candidatar") → **Vaga disponível → pedir currículo**;
-  - fala em freelance ou manda currículo sem dizer o dia → **Qual dia? (dom, seg ou ter)**;
-  - fala em freelance dizendo o dia → **Está disponível → deixar currículo**;
-  - manda o currículo (PDF) dizendo o dia → **Recebi o currículo**.
+  - pergunta pela vaga de freelancer ou de atendente ("saber mais…") → **Vaga disponível → pedir currículo**;
+  - pergunta se a vaga de freelancer ainda está disponível → **Está disponível → deixar currículo**;
+  - quer se candidatar sem dizer a vaga ("Quero me candidatar para a vaga") → **Qual vaga?**
+    ("Boa tarde, para qual vaga seria?");
+  - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (dom, seg ou ter)**;
+  - manda o currículo (PDF) dizendo a vaga ou o dia → **Recebi o currículo**;
+  - cita uma vaga sem resposta pronta (ex.: "Auxiliar de produção") → sem sugestão; escolha na lista ou escreva.
 - **Todas as respostas ficam em botões**, inclusive as 3 mensagens das vagas CLT e a mensagem do freelancer
   em duas versões (pedindo currículo ou disponibilidade).
 - **{saudacao}** vira "Bom dia", "Boa tarde" ou "Boa noite" pelo horário. **{nome}** vira o primeiro nome:

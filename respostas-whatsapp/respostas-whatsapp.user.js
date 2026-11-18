@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.0
+// @version      1.1
 // @description  Sugere e coloca na caixa de mensagem as respostas prontas das vagas (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -22,7 +22,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.0';
+  const VERSAO = '1.1';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui' };
 
   // ------------------------------------------------------------------ utilidades
@@ -131,6 +131,7 @@
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
     { id: 'recebi-cv', grupo: 'Freelancer', titulo: 'Recebi o currículo',
       texto: 'Obrigada pelo interesse, vou repassar seu currículo para o responsável e já te retorno' },
+    { id: 'qual-vaga', grupo: 'Geral', titulo: 'Qual vaga?', texto: '{saudacao}, para qual vaga seria?' },
     { id: 'bairro', grupo: 'Geral', titulo: 'Pedir o bairro',
       texto: '{saudacao}, tudo bem? Pode me informar o seu bairro, por favor? Há apenas [cidade] no currículo.' },
   ];
@@ -148,15 +149,37 @@
     const header = main.querySelector('header');
     const tituloEl = header && (header.querySelector('span[dir="auto"]') || header);
     const titulo = tituloEl ? texto(tituloEl) : '';
-    const msgs = [...main.querySelectorAll('.message-in, .message-out')].slice(-30).map(m => {
-      const corpo = m.querySelector('.copyable-text') || m;
+    const { itens, como } = acharMensagens(main);
+    const msgs = itens.slice(-30).map(({ el, entrada }) => {
+      const corpo = el.querySelector('.copyable-text, [data-pre-plain-text]') || el;
       return {
-        entrada: m.classList.contains('message-in'),
-        texto: (corpo.innerText || '').trim(),
-        pdf: /\.pdf\b/i.test(m.innerText || '') || !!m.querySelector('[data-icon*="document" i], [data-icon*="pdf" i], [title$=".pdf" i]'),
+        entrada,
+        texto: (corpo.innerText || el.innerText || '').trim(),
+        pdf: /\.pdf\b/i.test(el.innerText || '') || !!el.querySelector('[data-icon*="document" i], [data-icon*="pdf" i], [title$=".pdf" i]'),
       };
-    });
-    return { main, titulo, msgs };
+    }).filter(m => m.texto || m.pdf);
+    return { main, titulo, msgs, como };
+  }
+  // O WhatsApp Web muda de tempos em tempos; tenta do jeito mais seguro para o menos seguro.
+  function acharMensagens(main) {
+    const unicos = l => l.filter(e => !l.some(o => o !== e && o.contains(e)));
+    const r = main.getBoundingClientRect(), meio = r.left + r.width / 2, margem = r.width * 0.08;
+    const lado = el => { // à esquerda = da pessoa; à direita = sua; no meio (avisos, cartão do perfil) = ignora
+      const t = el.querySelector('[data-pre-plain-text], span.selectable-text, span[dir]') || el;
+      const rr = t.getBoundingClientRect();
+      if (!rr.width) return null;
+      const c = (rr.left + rr.right) / 2;
+      return Math.abs(c - meio) < margem ? null : c < meio;
+    };
+    let itens = unicos([...main.querySelectorAll('[data-id^="true_"], [data-id^="false_"]')])
+      .map(el => ({ el, entrada: el.getAttribute('data-id').startsWith('false_') }));
+    if (itens.length) return { itens, como: 'data-id' };
+    itens = [...main.querySelectorAll('.message-in, .message-out')].map(el => ({ el, entrada: el.classList.contains('message-in') }));
+    if (itens.length) return { itens, como: 'classes' };
+    itens = unicos([...main.querySelectorAll('[data-pre-plain-text]')]).map(el => ({ el, entrada: lado(el) })).filter(i => i.entrada !== null);
+    if (itens.length) return { itens, como: 'texto + lado' };
+    itens = [...main.querySelectorAll('[role="row"]')].map(el => ({ el, entrada: lado(el) })).filter(i => i.entrada !== null);
+    return { itens, como: itens.length ? 'linhas + lado' : 'nenhum' };
   }
   // Nome: do contato salvo; senão do "~Nome" do perfil; senão de "me chamo …" na mensagem.
   function nomeDaPessoa(c) {
@@ -176,7 +199,9 @@
     }
     const tudo = norm(c.msgs.map(m => m.texto).join(' '));
     if (/freela|freelancer fixo/.test(tudo)) return { catho: false, rotulo: 'Interessado no freelancer' };
-    return { catho: false, rotulo: c.msgs.length ? 'Conversa sem a mensagem da vaga' : 'Conversa nova' };
+    if (/(atendente|delivery)/.test(tudo)) return { catho: false, rotulo: 'Interessado na vaga de atendente' };
+    if (/(vaga|candidat|curriculo|interess)/.test(tudo)) return { catho: false, rotulo: 'Interessado em vaga' };
+    return { catho: false, rotulo: c.msgs.length ? 'Conversa sem assunto de vaga' : 'Conversa nova' };
   }
   // Sugestão pela última mensagem recebida (depois da última que você mandou).
   function sugerir(c, catho) {
@@ -190,9 +215,16 @@
     const dia = /(domingo|segunda|terca|\bdom\b|\bseg\b|\bter\b)/.test(t);
     if (/(nao tenho (mais )?interesse|sem interesse|nao (vou|posso|consigo)|ja (estou|consegui|arrumei)|desist)/.test(t)) return 'sem-interesse';
     if (catho) return /(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t) ? 'interessado' : null;
-    if (pdf || /curriculo/.test(t)) return dia ? 'recebi-cv' : 'qual-dia';
-    if (/freela/.test(t)) return dia ? 'freela-ok' : 'qual-dia';
-    if (/(vaga|saber mais|candidat|disponivel|interess|trabalh)/.test(t)) return 'freela-cv';
+    const freela = /freela/.test(t), atendente = /(atendente|delivery)/.test(t);
+    // mandou currículo: se disse a vaga ou o dia, agradece; se não, pergunta o dia
+    if (pdf || /curriculo/.test(t)) return dia || freela || atendente ? 'recebi-cv' : 'qual-dia';
+    // perguntou se a vaga de freelancer ainda está disponível
+    if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
+    // quer saber da vaga de freelancer / atendente: manda a descrição
+    if ((freela || atendente) && /(saber|informa|como funciona|detalhe|vaga|interess)/.test(t)) return 'freela-cv';
+    if (freela) return dia ? 'freela-ok' : 'qual-dia';
+    // quer se candidatar sem dizer a vaga
+    if (/(candidat|interess|vaga|trabalh|oportunidade)/.test(t)) return 'qual-vaga';
     return null;
   }
 
@@ -227,7 +259,7 @@
   // ------------------------------------------------------------------ quadro
   const CSS = `
     :host { all: initial; }
-    .box { position: fixed; right: 18px; bottom: 86px; z-index: 2147483646; width: 340px; max-height: 62vh; display: flex; flex-direction: column;
+    .box { position: fixed; right: 18px; top: 72px; z-index: 2147483646; width: 320px; max-height: 60vh; display: flex; flex-direction: column;
       background: #ffffff; color: #111b21; border: 1px solid #d1d7db; border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.25);
       font: 13px/1.4 "Segoe UI", Roboto, Arial, sans-serif; }
     .box.escuro { background: #1f2c34; color: #e9edef; border-color: #2a3942; }
@@ -254,13 +286,13 @@
     label.ed { display: grid; gap: 3px; font-size: 12px; }
     .linha { display: flex; gap: 6px; flex-wrap: wrap; }
   `;
-  let raiz = null, aviso = null, editor = false, ultimoHtml = '', conversa = '';
+  let raiz = null, aviso = null, editor = false, ultimoHtml = '', conversa = '', aberto = false;
 
   function htmlQuadro() {
     const ui = ler(K.ui, { min: false });
     const c = conversaAberta();
     const chave = c ? c.titulo : '';
-    if (chave !== conversa) { conversa = chave; aviso = null; editor = false; } // trocou de conversa
+    if (chave !== conversa) { conversa = chave; aviso = null; editor = false; aberto = false; } // trocou de conversa
     const cls = `box${document.body && /\bdark\b/.test(document.body.className) ? ' escuro' : ''}${ui.min ? ' min' : ''}`;
     const topo = `<header data-a="min">🍮 <b>PudiMarin</b> · respostas<span class="sp"></span>${ui.min ? '▴' : '▾'}</header>`;
     if (!c) return { cls, html: `${topo}<div class="corpo"><div class="muted">Abra uma conversa.</div></div>` };
@@ -279,8 +311,10 @@
         <div class="linha"><button class="pri" data-a="salvar">Salvar</button><button data-a="padrao">Voltar ao original</button><button data-a="editor">Fechar</button></div></div>`;
     return {
       cls,
-      html: `${topo}<div class="corpo">${quem}${avisoHtml}${sugHtml}${editor ? edicao : botoes}
-        <footer><button data-a="editor">✏️ Editar respostas</button><button data-a="diag">Diagnóstico</button></footer></div>`,
+      html: `${topo}<div class="corpo">${quem}${avisoHtml}${sugHtml}
+        ${editor ? edicao : aberto ? botoes : ''}
+        <footer><button data-a="abrir">${aberto || editor ? 'Fechar lista ▴' : 'Todas as respostas ▾'}</button>
+          ${aberto || editor ? '<button data-a="editor">✏️ Editar</button><button data-a="diag">Diagnóstico</button>' : ''}</footer></div>`,
     };
   }
   function desenhar(forcar) {
@@ -294,6 +328,19 @@
     const box = raiz.querySelector('.box');
     box.className = cls;
     box.innerHTML = html;
+    posicionar();
+  }
+  // Fica logo abaixo do cabeçalho da conversa e para antes da caixa de mensagem.
+  function posicionar() {
+    const box = raiz && raiz.querySelector('.box');
+    const main = document.querySelector('#main');
+    if (!box || !main) return;
+    const h = main.querySelector('header');
+    const topo = Math.round((h ? h.getBoundingClientRect().bottom : main.getBoundingClientRect().top + 60) + 10);
+    const cx = caixaDeMensagem();
+    const fundo = cx ? Math.round(cx.getBoundingClientRect().top - 16) : window.innerHeight - 90;
+    box.style.top = `${topo}px`;
+    box.style.maxHeight = `${Math.max(140, fundo - topo)}px`;
   }
 
   // Diagnóstico: só a estrutura da página, com letras e números trocados por x e 9.
@@ -314,12 +361,14 @@
       const ok = await colocarNaCaixa(preencher(textoResposta(el.dataset.r), c ? nomeDaPessoa(c) : ''));
       aviso = { em: Date.now(), copia: !ok, txt: ok ? 'Pronto: a resposta está na caixa de mensagem. Confira e aperte Enter.'
         : 'Copiei a resposta. Clique na caixa de mensagem e aperte Ctrl+V.' };
+      aberto = false;
       desenhar(true);
       return;
     }
     const a = el.dataset.a;
     if (a === 'min') { const ui = ler(K.ui, { min: false }); gravar(K.ui, { ...ui, min: !ui.min }); desenhar(true); }
     else if (a === 'editor') { editor = !editor; desenhar(true); }
+    else if (a === 'abrir') { if (editor) editor = false; else aberto = !aberto; desenhar(true); }
     else if (a === 'salvar') {
       const novas = {};
       raiz.querySelectorAll('textarea[data-msg]').forEach(t => { novas[t.dataset.msg] = t.value.replace(/\r/g, ''); });
@@ -333,11 +382,15 @@
       const cx = caixaDeMensagem();
       GM_setClipboard(JSON.stringify({
         versao: VERSAO, conversaAberta: !!c, titulo: c ? mascarar(c.titulo) : null,
-        mensagens: c ? { recebidas: c.msgs.filter(m => m.entrada).length, enviadas: c.msgs.filter(m => !m.entrada).length } : null,
+        mensagens: c ? { recebidas: c.msgs.filter(m => m.entrada).length, enviadas: c.msgs.filter(m => !m.entrada).length, como: c.como } : null,
+        contagens: c ? { dataId: c.main.querySelectorAll('[data-id]').length, classesAntigas: c.main.querySelectorAll('.message-in, .message-out').length,
+          prePlainText: c.main.querySelectorAll('[data-pre-plain-text]').length, linhas: c.main.querySelectorAll('[role="row"]').length,
+          selectable: c.main.querySelectorAll('span.selectable-text').length } : null,
         assunto: c ? assunto(c).rotulo : null, sugestao: c ? sugerir(c, assunto(c).catho) : null, achouNome: !!(c && nomeDaPessoa(c)),
         cabecalho: c && c.main.querySelector('header') ? esqueleto(c.main.querySelector('header')) : null,
         caixaDeMensagem: cx ? esqueleto(cx) : null,
-        ultimasMensagens: c ? [...c.main.querySelectorAll('.message-in, .message-out')].slice(-2).map(m => esqueleto(m)) : [],
+        ultimasMensagens: c ? acharMensagens(c.main).itens.slice(-2).map(i => esqueleto(i.el)) : [],
+        exemploDataId: c ? [...c.main.querySelectorAll('[data-id]')].slice(-3).map(e => mascarar(e.getAttribute('data-id'))) : [],
       }, null, 1), 'text');
       aviso = { em: Date.now(), copia: true, txt: 'Diagnóstico copiado (sem os textos das conversas). Cole no chat com o Claude.' };
       desenhar(true);
@@ -356,6 +409,7 @@
     new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(() => desenhar(false), 500); })
       .observe(document.body, { childList: true, subtree: true, characterData: true });
     setInterval(() => desenhar(false), 4000); // apaga avisos antigos
+    window.addEventListener('resize', posicionar);
     desenhar(true);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true });
