@@ -94,6 +94,32 @@ No painel, clique em **📋 Contatos**. Abre uma tela com todos os candidatos qu
 As marcações ficam guardadas neste navegador, no Tampermonkey. Use sempre o mesmo navegador para trabalhar
 na lista.
 
+## 💬 Respostas no WhatsApp Web
+
+Com o script instalado, ao abrir o **WhatsApp Web** aparece o quadro **🍮 PudiMarin · respostas** acima da
+caixa de mensagem. Clique no título para recolher.
+
+- **Quem é:** se a conversa é de um candidato da Catho, mostra nome, vaga, loja, tempo de ônibus e **Etapa**
+  (Respondeu, Interessado, Entrevista marcada ou Sem interesse). A etapa aparece também na tela de 📋 Contatos,
+  que agora tem o filtro "Interessados".
+- **Sugestão:** pela última mensagem da pessoa, o quadro sugere a resposta. Exemplos:
+  - "tenho interesse" depois da mensagem da vaga → próxima etapa;
+  - pergunta pela vaga → mensagem do freelancer;
+  - fala em freelance sem dizer o dia → "qual dia?";
+  - mandou o currículo dizendo o dia → "recebi o currículo".
+- **Um clique coloca o texto na caixa de mensagem.** Você confere e aperta Enter. O script **nunca envia nada
+  sozinho**, para não arriscar o número. Se o WhatsApp não aceitar o texto, ele fica copiado: clique na caixa
+  e aperte Ctrl+V.
+- **{saudacao}** vira "Bom dia", "Boa tarde" ou "Boa noite" pelo horário, **{nome}** vira o primeiro nome e
+  **{cidade}** vira a cidade do currículo (na resposta "Pedir o bairro").
+- **Bairro:** se o candidato da Catho está sem bairro e responde ("moro no Santa Terezinha"), o quadro já
+  preenche o bairro. Clique em **Salvar e calcular ônibus** e o tempo aparece em instantes.
+- **✏️ Editar respostas:** dá para mudar todos os textos.
+
+Respostas que vieram das suas anotações: vaga freelancer (pedindo currículo ou disponibilidade), qual dia,
+"está sim, pode deixar o currículo", "recebi o currículo" e "pedir o bairro". **"Tem interesse → próxima etapa"
+e "Sem interesse → agradecer" são sugestões minhas:** ajuste em ✏️ Editar respostas.
+
 ## O painel
 
 - **Até 45 min**: quem está perto, com a loja, o tempo de ônibus e o WhatsApp (o link abre a conversa).
