@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      3.1
+// @version      3.2
 // @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
@@ -38,7 +38,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '3.1';
+  const VERSAO = '3.2';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -457,13 +457,16 @@
       .filter(e => !e.closest('header, nav') && nomePessoa(texto(e)))
       .filter(e => !info || (e.compareDocumentPosition(info) & Node.DOCUMENT_POSITION_FOLLOWING));
     const nomeEl = info ? nomes[nomes.length - 1] : nomes[0];
-    return { nome: nomeEl ? texto(nomeEl) : null, cidade: m ? m[1] : '', uf: m ? m[2] : '', bairro: m && m[3] ? m[3] : '', info: linha };
+    const fones = [...card.querySelectorAll('a[href*="whatsapp" i], a[href*="wa.me" i]')]
+      .map(a => { const mm = (a.getAttribute('href') || '').match(/(?:phone=|wa\.me\/)\+?(\d{10,13})/i); return mm ? limparFone(mm[1]) : null; })
+      .filter(Boolean);
+    return { nome: nomeEl ? texto(nomeEl) : null, cidade: m ? m[1] : '', uf: m ? m[2] : '', bairro: m && m[3] ? m[3] : '', info: linha, fones };
   }
 
   function lerCards(vaga) {
     const cards = acharCards();
     const v = vaga || vagaDaPagina();
-    registrar(cards.map(c => ({ nome: c.nome, acc: { fones: [], bairro: c.bairro, cidade: c.cidade, uf: c.uf }, vaga: v })), 'lista');
+    registrar(cards.map(c => ({ nome: c.nome, acc: { fones: c.fones || [], bairro: c.bairro, cidade: c.cidade, uf: c.uf }, vaga: v })), 'lista');
     diag.capturados.lista = Math.max(diag.capturados.lista || 0, cards.length);
     return cards;
   }
@@ -532,9 +535,15 @@
   // e a lupa "116.184 currículos", que leva para a BUSCA do banco de currículos. A lupa nunca é seguida.
   const NAO_TITULO = /curr[ií]culos?|catho express|agilizar|reativar|sal[aá]rio|candidat/i;
   const ehBuscaDeCurriculos = url => /\/curriculos\/busca/i.test(String(url || ''));
+  // "Minhas vagas" é só a lista (…/minhas-vagas/). A lista de inscritos fica embaixo dela
+  // (…/minhas-vagas/…-curriculos/38532997/) e também mostra "4 Candidatos" + o título da vaga no topo.
+  const ehListaDeVagas = () => /\/minhas-vagas\/?$/i.test(location.pathname);
+  const ehPaginaDeInscritos = () => /\/minhas-vagas\/./i.test(location.pathname)
+    && (!!document.querySelector('#totalCandidates, .totalcandidates') || /curriculos\/\d{5,}/i.test(location.pathname) || menores(/^fora do perfil$/i, 20).length > 0);
   function idDaVaga(href) {
     const h = String(href || '');
-    const m = h.match(/[?&](?:vaga_?id|id_?vaga|vaga|id)=(\d{5,})/i) || h.match(/\/vagas?\/(\d{5,})(?:\/|$|\?)/i);
+    const m = h.match(/[?&](?:vaga_?id|id_?vaga|vaga|id)=(\d{5,})/i) || h.match(/\/vagas?\/(\d{5,})(?:\/|$|\?)/i)
+      || h.match(/\/minhas-vagas\/[^?#]*?\/(\d{6,})\/?(?:[?#]|$)/i);
     return m ? m[1] : null;
   }
   function linhasDeVagas() {
@@ -580,7 +589,10 @@
     if (juntos.join() !== ids.join()) gravar(K.vagasIds, juntos);
   }
   function acharProxima() {
-    const ok = e => visivel(e) && !nossa(e) && !e.disabled && e.getAttribute('aria-disabled') !== 'true' && !/disabled|desabilit|inativ/i.test(classeDe(e));
+    const ok = e => visivel(e) && !nossa(e) && !e.disabled && e.getAttribute('aria-disabled') !== 'true'
+      && !/disabled|desabilit|inativ/i.test(`${classeDe(e)} ${classeDe(e.parentElement)}`);
+    const seta = [...document.querySelectorAll('.arrow.next, [class~="next"], [class*="pagination" i] [class*="next" i]')].find(ok);
+    if (seta) return seta;
     return [...document.querySelectorAll('a, button, [role="button"]')].find(e => ok(e)
       && (/^(pr[oó]xim[ao]s?|seguinte|›|»|>|carregar mais( candidatos)?|ver mais candidatos)$/i.test(texto(e))
         || /pr[oó]xim|next/i.test(`${e.getAttribute('aria-label') || ''} ${e.getAttribute('title') || ''} ${e.getAttribute('rel') || ''}`))) || null;
@@ -882,7 +894,9 @@
           await navegar(st.urlVagas || URL_VAGAS);
           continue;
         }
-        const tipo = await esperar(() => parou() ? 'parou' : acharCards().length ? 'candidatos' : linhasDeVagas().length ? 'vagas' : null, 20000, 700);
+        const tipo = await esperar(() => parou() ? 'parou' : acharCards().length ? 'candidatos'
+          : ehListaDeVagas() && linhasDeVagas().length ? 'vagas' : null, 15000, 700)
+          || (ehPaginaDeInscritos() ? 'candidatos' : null);
         let r;
         if (tipo === 'parou') return encerrarParado();
         if (tipo === 'vagas') r = await etapaVagas();
@@ -973,7 +987,8 @@
     const vaga = vagaAtual.vaga;
     const c = cfg();
     const cards = lerCards(vaga);
-    logar(`${vagaAtual.titulo} (${vagaAtual.qtd}), página ${st.paginas + 1}: ${cards.length} candidatos`);
+    logar(`${vagaAtual.titulo} (${vagaAtual.qtd}), página ${st.paginas + 1}: ${cards.length ? `${cards.length} candidatos`
+      : 'nenhum inscrito liberado (os bloqueados pelo plano, sem nome, ficam de fora)'}`);
     const ids = cards.map(k => k.id);
     const semRota = () => ids.filter(id => { const x = candidatos()[id]; return x && !x.rota && enderecoSuficiente(x.endereco); });
     if (semRota().length) logar(`Consultando o ônibus de ${semRota().length} candidato(s)…`);
@@ -1052,12 +1067,14 @@
     if (prox && st.paginas < 20) {
       st.paginas++;
       salvarEstado(st);
-      const antes = ids.join('|');
       const href = prox.tagName === 'A' ? linkSeguro(prox) : null;
       if (href) return navegar(href);
+      const antes = acharCards().map(k => k.id).join('|');
+      const urlAntes = location.href;
       clicar(prox);
-      await esperar(() => parou() || acharCards().map(k => k.id).join('|') !== antes, 15000, 500);
-      return;
+      const mudou = await esperar(() => parou() || location.href !== urlAntes || acharCards().map(k => k.id).join('|') !== antes, 15000, 500);
+      if (mudou) return;
+      st = estado(); // a seta não trouxe ninguém novo: era a última página
     }
     const f = st.fila.find(x => x.chave === st.vagaAtual);
     if (f) f.feito = true;
@@ -1407,11 +1424,18 @@
       versao: VERSAO, pagina: location.origin + mascarar(location.pathname), titulo: mascarar(document.title), verificador: souVerificador(),
       leitura: { hook: diag.hook, respostasJson: diag.respostas, candidatosLidos: diag.capturados, erros: diag.erros },
       tela: {
+        listaDeVagas: ehListaDeVagas(), paginaDeInscritos: ehPaginaDeInscritos(),
         cartoes: cards.length, comBairro: cards.filter(k => k.bairro).length,
-        vagasNaLista: linhasDeVagas().map(l => ({ vaga: l.vaga, qtd: l.qtd, desativada: l.desativada, temNumero: !!l.vagaId,
+        cartaoHtml: (() => {
+          const a = (cards[0] && cards[0].ancora) || menores(/^contatos?$/i, 20)[0];
+          let el = a;
+          for (let i = 0; el && i < 6 && texto(el).length < 250; i++) el = el.parentElement;
+          return el ? esqueletoHtml(el) : null;
+        })(),
+        vagasNaLista: (ehListaDeVagas() ? linhasDeVagas() : []).map(l => ({ vaga: l.vaga, qtd: l.qtd, desativada: l.desativada, temNumero: !!l.vagaId,
           linkContagem: mascarar((l.el.closest('a[href]') || l.el.querySelector('a[href]') || {}).href || ''),
           linkTitulo: mascarar((l.tituloEl.closest('a[href]') || l.tituloEl.querySelector('a[href]') || {}).href || '') })),
-        linhaVagaHtml: (() => { const l = linhasDeVagas()[0]; return l ? esqueletoHtml(l.linha) : null; })(),
+        linhaVagaHtml: (() => { const l = ehListaDeVagas() && linhasDeVagas()[0]; return l ? esqueletoHtml(l.linha) : null; })(),
         caminhoAprendido: !!(ler(K.caminho, null) || {}).modelo,
         achouLike: !!b.up, likeIgualDislike: b.up ? aparencia(b.up) === aparencia(b.down) : null, proximaPagina: !!acharProxima(),
         infoExemplo: cards[0] ? mascarar(cards[0].info) : null,
@@ -1442,9 +1466,8 @@
     const lerTela = () => {
       lerJsonEmbutido();
       if (!souVerificador() && !ehBuscaDeCurriculos(location.href)) {
-        const linhas = linhasDeVagas();
-        if (linhas.length) guardarIdsDasVagas(linhas);
-        else if (lerCards().length) aprenderCaminho();
+        if (ehListaDeVagas()) guardarIdsDasVagas(linhasDeVagas());
+        else if (lerCards().length || ehPaginaDeInscritos()) aprenderCaminho();
       }
       lerPagina(false);
     };

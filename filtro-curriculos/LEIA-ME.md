@@ -15,6 +15,14 @@ escolher, ele faz isto sozinho:
 Quem já tem avaliação (👍 ou 👎 dado por você) fica de fora: o script não mexe. Também não dá 👍 duas
 vezes na mesma pessoa.
 
+Os candidatos **bloqueados pelo plano gratuito** ("Este candidato foi recomendado pela nossa IA! Assine…")
+aparecem sem nome e sem "Avalie". Esses ficam de fora, porque não dá para saber quem são nem avaliar.
+
+Sobre o WhatsApp: se o botão "Ver WhatsApp" do cartão já trouxer o número, o script usa esse número. Se não
+trouxer, abre "contatos", e só de quem ganhou 👍. A Catho avisa que o plano gratuito tem limite de mensagens
+por vaga. Se notar que "contatos" também está gastando esse limite, desmarque
+**⚙ Ajustes → Pegar WhatsApp**.
+
 ## Lojas
 
 | Vaga | Loja | Endereço |
