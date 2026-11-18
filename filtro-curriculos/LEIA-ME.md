@@ -6,7 +6,8 @@ escolher, ele faz isto sozinho:
 1. abre **Minhas vagas** e entra nos candidatos de **Auxiliar de Cozinha** e de **Atendente de Delivery**,
    passando por todas as páginas;
 2. lê a cidade e o bairro de cada candidato (exemplo: "São Bernardo do Campo, SP - Jardim da represa");
-3. pergunta ao Google quanto tempo leva **de ônibus** do bairro até a loja da vaga, num dia útil às 8h;
+3. abre o **Google Maps** numa aba em segundo plano, do mesmo jeito que você faz na mão, e lê o tempo
+   de **transporte público** do bairro até a loja da vaga, saindo num dia útil às 8h. A aba fecha sozinha no fim;
 4. se der até **45 minutos**, dá **👍** em "Avalie", abre **contatos** para pegar o WhatsApp e **avisa
    você** com uma notificação no Windows.
 
@@ -23,28 +24,16 @@ vezes na mesma pessoa.
 
 O candidato a atendente é comparado com as duas lojas e fica com a mais perto.
 
+O script busca as lojas pelo **endereço**, e não pelo nome. Buscar "Doces Pudimarin - Pudim e Cookie
+(Rudge Ramos)" no Google Maps cai na loja **Vergueiro**, porque ela fica no bairro Rudge Ramos.
+
 ## 1. Instalar (uma vez)
 
 Com o Tampermonkey já instalado no navegador, abra este link e clique em **Instalar** (ou **Atualizar**):
 
 https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtro-curriculos/filtro-catho.user.js
 
-## 2. Criar a chave do Google (uma vez, uns 10 minutos)
-
-O cálculo de ônibus é feito pelo Google Maps. Para isso, você precisa de uma chave sua.
-
-1. Entre em https://console.cloud.google.com com sua conta Google e crie um projeto (por exemplo, "Filtro Catho").
-2. Em **Faturamento**, vincule um cartão. O Google oferece uma cota grátis por mês, e cada
-   candidato usa 1 consulta (cozinha) ou 2 (atendente), só na primeira vez que aparece.
-3. Em **APIs e serviços → Biblioteca**, procure **Routes API** e clique em **Ativar**.
-4. Em **APIs e serviços → Credenciais**, clique em **Criar credenciais → Chave de API**.
-5. Abra a chave criada. Em **Restrições de API**, escolha **Restringir chave**, marque só a
-   **Routes API** e salve.
-6. Recomendado: em **Faturamento → Orçamentos e alertas**, crie um alerta de valor baixo (por exemplo, R$ 10).
-   Assim você recebe um aviso se a conta passar disso.
-7. Copie a chave (começa com `AIza…`). Na Catho, abra o painel do filtro, vá em **⚙ Ajustes** e cole a chave em **Chave Google**.
-
-## 3. Primeira verificação (conferência)
+## 2. Primeira verificação (conferência)
 
 1. Entre na Catho, na área da empresa, e clique em **Verificar agora** no painel **🍮 Filtro PudiMarin**,
    no canto de baixo da tela.
@@ -55,7 +44,7 @@ O cálculo de ônibus é feito pelo Google Maps. Para isso, você precisa de uma
    - Se estiver errado, clique em **Não, está errado**. Depois clique em **Diagnóstico** e cole o resultado
      no chat com o Claude.
 
-## 4. Todo dia
+## 3. Todo dia
 
 - A verificação roda no horário de **⚙ Ajustes → Verificar todo dia** (o padrão é 9h).
 - Para isso, o **navegador precisa estar aberto com alguma aba da Catho**. Deixe uma aba fixada
@@ -75,7 +64,20 @@ O cálculo de ônibus é feito pelo Google Maps. Para isso, você precisa de uma
   e aí aparecem botões para escolher.
 - **Copiar lista**: copia o resultado pronto para colar no WhatsApp (nome, vaga, endereço da loja e WhatsApp).
 - **Baixar planilha**: baixa tudo em CSV, que abre no Excel.
-- **⚙ Ajustes**: chave do Google, limite (minutos ou km), horário diário e se deve abrir "contatos".
+- **⚙ Ajustes**: limite em minutos, horário de saída usado no cálculo (padrão 8h de um dia útil),
+  horário da verificação diária e se deve abrir "contatos".
+- **ver no Maps**: abre no Google Maps a mesma rota que o filtro consultou.
+
+## Google Maps
+
+- Cada bairro é consultado uma vez só para cada loja. Candidatos do mesmo bairro aproveitam a mesma consulta.
+- Uma aba do Google Maps abre em segundo plano, consulta as rotas uma por uma, sem pressa, e fecha
+  sozinha. As abas do Maps que você mesmo abre não são tocadas.
+- Se o Google desconfiar e pedir para confirmar que você não é um robô, o filtro avisa no painel. Abra o
+  Google Maps, confirme e clique em **tentar de novo**.
+- Opcional: se quiser mais velocidade, dá para colar em **⚙ Ajustes** uma chave da Routes API do Google
+  (Google Cloud → APIs e serviços → Routes API → Credenciais). Com a chave, o filtro usa a API em vez da
+  aba do Maps. Sem chave, tudo funciona normalmente.
 
 Quando você mesmo abre os candidatos de uma vaga, o painel também mostra o tempo de ônibus deles.
 A vaga é reconhecida pelo título da página.

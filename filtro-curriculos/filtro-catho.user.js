@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         Filtro de candidatos Catho - PudiMarin
 // @namespace    filtro-catho-pudimarin
-// @version      2.0
-// @description  Todo dia confere os candidatos das vagas na Catho, calcula o ônibus até as lojas e dá 👍 em quem mora perto
+// @version      3.0
+// @description  Todo dia confere os candidatos das vagas na Catho, vê no Google Maps o tempo de ônibus até as lojas e dá 👍 em quem mora perto
 // @match        https://*.catho.com.br/*
 // @match        https://catho.com.br/*
+// @match        https://www.google.com/maps*
+// @match        https://www.google.com.br/maps*
 // @run-at       document-start
 // @noframes
 // @sandbox      JavaScript
@@ -16,6 +18,7 @@
 // @grant        GM_setClipboard
 // @grant        GM_notification
 // @grant        GM_openInTab
+// @grant        window.close
 // @connect      routes.googleapis.com
 // @updateURL    https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtro-curriculos/filtro-catho.user.js
 // @downloadURL  https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtro-curriculos/filtro-catho.user.js
@@ -25,8 +28,9 @@
 // 1. Todo dia, no horário escolhido, se houver uma aba da Catho aberta, o script abre outra aba
 //    em "Minhas vagas", entra nos candidatos de Auxiliar de Cozinha e de Atendente de Delivery
 //    e lê nome, idade, cidade e bairro de cada um.
-// 2. Para cada candidato, pergunta ao Google quanto tempo leva de ônibus (dia útil, 8h) do bairro
-//    dele até cada loja da vaga, e fica com a loja mais perto.
+// 2. Para cada candidato, abre o Google Maps numa aba em segundo plano (como você faz na mão) e lê
+//    o tempo de transporte público do bairro dele até cada loja da vaga, saindo num dia útil às 8h.
+//    Fica com a loja mais perto. (Se você colar uma chave do Google em Ajustes, usa a chave.)
 // 3. Quem estiver dentro do limite (padrão 45 min) ganha 👍 em "Avalie". O script abre "contatos"
 //    para pegar o WhatsApp e avisa com uma notificação. Na primeira vez, ele marca em vermelho
 //    os 👍 que daria e espera você conferir antes de clicar.
@@ -34,7 +38,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '2.0';
+  const VERSAO = '3.0';
   const VAGAS = { cozinha: 'Auxiliar de Cozinha', atendente: 'Atendente de Delivery' };
   const UNIDADES = [
     {
@@ -57,8 +61,12 @@
   const URL_VAGAS = 'https://www.catho.com.br/area-empresa/minhas-vagas/';
 
   // pm:worker = andamento da verificação (na aba que verifica); pm:varredura = agenda e último resultado
-  const K = { cand: 'pm:candidatos', cfg: 'pm:config', ui: 'pm:ui', worker: 'pm:worker', varredura: 'pm:varredura' };
-  const CFG_PADRAO = { chave: '', limite: 45, medida: 'min', vagaPagina: '', diario: true, hora: '09:00', pegarWhats: true, curtirConfirmado: false };
+  // pm:maps:* = pedidos de rota para a aba do Google Maps, respostas dela e o sinal de vida dela
+  const K = {
+    cand: 'pm:candidatos', cfg: 'pm:config', ui: 'pm:ui', worker: 'pm:worker', varredura: 'pm:varredura',
+    mapsPedidos: 'pm:maps:pedidos', mapsRes: 'pm:maps:resultados', mapsVivo: 'pm:maps:vivo', mapsAbertura: 'pm:maps:abertura',
+  };
+  const CFG_PADRAO = { chave: '', limite: 45, saida: '08:00', vagaPagina: '', diario: true, hora: '09:00', pegarWhats: true, curtirConfirmado: false };
   const W = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
 
   // ------------------------------------------------------------------ utilidades
@@ -96,6 +104,105 @@
     const h = [...document.querySelectorAll('h1, h2')].slice(0, 4).map(e => e.textContent).join(' ');
     return classificar(`${document.title} ${h}`);
   };
+
+  // ------------------------------------------------------------------ Google Maps
+  // Link de rota de transporte público saindo no próximo dia útil no horário de "saída" (ex.: 08:00).
+  function urlMaps(origem, u, saida) {
+    const [hh, mm] = String(saida || cfg().saida || '08:00').split(':').map(Number);
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    while ([0, 6].includes(d.getDay())) d.setDate(d.getDate() + 1);
+    const ts = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hh || 0, mm || 0) / 1000); // hora local escrita como UTC
+    const enc = t => encodeURIComponent(t).replace(/%20/g, '+');
+    return `https://www.google.com/maps/dir/${enc(origem)}/${enc(u.rota)}/data=!4m6!4m5!2m3!6e0!7e2!8j${ts}!3e3?hl=pt-BR`;
+  }
+  // "30 min", "1h20m", "1 h 21 min", "3 dias 9 h" -> minutos (só a primeira duração do texto)
+  function minutosDe(textoDuracao) {
+    const t = String(textoDuracao || '').replace(/\s+/g, ' ');
+    const rx = /(\d+)\s*(dias?|horas?|h|min|m)(?![a-zà-ú])/gi;
+    let total = 0, achou = false, fim = -1, m;
+    while ((m = rx.exec(t))) {
+      if (achou && t.slice(fim, m.index).trim()) break;
+      const n = Number(m[1]), un = m[2].toLowerCase();
+      total += un.startsWith('d') ? n * 1440 : un.startsWith('h') ? n * 60 : n;
+      achou = true;
+      fim = rx.lastIndex;
+    }
+    return achou ? total : null;
+  }
+  const chaveMaps = (origem, uid, saida) => `${norm(origem)}→${uid}@${saida}`;
+
+  // Roda só na aba do Google Maps que o filtro abriu (as abas do Maps que você abre não são tocadas).
+  // Pega o próximo pedido de rota, abre o link, lê o tempo do botão "Transporte público" e anota.
+  function modoMaps() {
+    if (location.hash === '#pm-maps') window.name = `pm-maps:${Math.random().toString(36).slice(2)}`;
+    if (!String(window.name).startsWith('pm-maps')) return;
+    const dorme = ms => new Promise(r => setTimeout(r, ms));
+    const sess = (k, v) => {
+      try {
+        if (v === undefined) return JSON.parse(sessionStorage.getItem(k) || 'null');
+        sessionStorage.setItem(k, JSON.stringify(v));
+      } catch (e) { return null; }
+      return v;
+    };
+    const pulsar = () => gravar(K.mapsVivo, { ts: Date.now(), dono: window.name });
+    async function lerTempo() {
+      const fim = Date.now() + 25000;
+      for (;;) {
+        const modo = document.querySelector('[data-travel_mode="3"]');
+        const viagem = document.querySelector('[data-trip-index="0"]');
+        if (viagem) {
+          await dorme(800);
+          const t = minutosDe(modo && modo.textContent) ?? minutosDe(viagem.textContent);
+          if (t != null) return { min: t };
+        }
+        const txt = document.body ? document.body.innerText.slice(0, 3000) : '';
+        if (/n[aã]o encontrou|n[aã]o (foi|[eé]) poss[ií]vel (encontrar|calcular)/i.test(txt)) return { erro: 'o Google Maps não encontrou o endereço' };
+        if (Date.now() > fim) {
+          const t = minutosDe(modo && modo.textContent);
+          return t != null ? { min: t } : { erro: 'o Google Maps não mostrou rota de ônibus' };
+        }
+        await dorme(600);
+      }
+    }
+    async function principal() {
+      const v = ler(K.mapsVivo, {});
+      if (v.dono && v.dono !== window.name && Date.now() - v.ts < 20e3) { window.close(); return; } // outra aba do Maps já está nisso
+      pulsar();
+      setInterval(pulsar, 5000);
+      const atual = sess('pm-maps-atual');
+      if (atual && /\/maps\/dir\//.test(location.pathname)) {
+        sess('pm-maps-atual', null);
+        const r = await lerTempo();
+        const res = ler(K.mapsRes, {});
+        if (r.min != null) res[atual.chave] = { min: r.min, em: Date.now() };
+        else if (atual.tentativa >= 2) res[atual.chave] = { min: null, erro: r.erro, em: Date.now() };
+        gravar(K.mapsRes, res);
+      }
+      for (let ocioso = 0; ocioso < 10; ocioso++) {
+        const ped = ler(K.mapsPedidos, {}), res = ler(K.mapsRes, {});
+        const prox = Object.entries(ped).find(([k]) => !res[k]);
+        if (prox) {
+          const [chave, p] = prox;
+          const u = UNIDADES.find(x => x.id === p.unidade);
+          const tent = sess('pm-maps-tent') || {};
+          tent[chave] = (tent[chave] || 0) + 1;
+          sess('pm-maps-tent', tent);
+          if (!u || tent[chave] > 3) { res[chave] = { min: null, erro: 'não consegui consultar', em: Date.now() }; gravar(K.mapsRes, res); continue; }
+          sess('pm-maps-atual', { chave, tentativa: tent[chave] });
+          await dorme(1200 + Math.random() * 1800); // sem pressa, como uma pessoa
+          location.href = urlMaps(p.origem, u, p.saida);
+          return;
+        }
+        await dorme(3000);
+      }
+      gravar(K.mapsVivo, { ts: 0, dono: '' });
+      window.close(); // nada mais para consultar
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', principal, { once: true });
+    else principal();
+  }
+  if (/(^|\.)google\.com(\.br)?$/.test(location.hostname)) { modoMaps(); return; }
 
   // ------------------------------------------------------------------ leitura dos dados (JSON)
   const RX = {
@@ -481,15 +588,65 @@
   }
 
   // ------------------------------------------------------------------ cálculo de ônibus (Google)
-  function proximoDiaUtil8h() {
+  function proximoDiaUtilSaida() {
+    const [hh, mm] = String(cfg().saida || '08:00').split(':').map(Number);
     const H = 3600e3, agoraBR = new Date(Date.now() - 3 * H); // horário de Brasília (sem horário de verão)
-    let d = new Date(Date.UTC(agoraBR.getUTCFullYear(), agoraBR.getUTCMonth(), agoraBR.getUTCDate() + 1, 8 + 3));
+    let d = new Date(Date.UTC(agoraBR.getUTCFullYear(), agoraBR.getUTCMonth(), agoraBR.getUTCDate() + 1, (hh || 0) + 3, mm || 0));
     while ([0, 6].includes(new Date(d.getTime() - 3 * H).getUTCDay())) d = new Date(d.getTime() + 24 * H);
     return d.toISOString().replace('.000Z', 'Z');
   }
 
   let ocupado = false, erroGeral = '';
   function processarFila() {
+    if (cfg().chave) processarFilaApi();
+    else if (!erroGeral) processarFilaMaps();
+  }
+
+  // Sem chave: pede as rotas para a aba do Google Maps e junta as respostas.
+  function processarFilaMaps() {
+    const c = cfg();
+    const res = ler(K.mapsRes, {}), ped = ler(K.mapsPedidos, {});
+    let mudouPed = false;
+    const prontos = {};
+    for (const x of Object.values(candidatos())) {
+      if (x.rota || !x.vagas.length || !enderecoSuficiente(x.endereco)) continue;
+      const us = UNIDADES.filter(u => x.vagas.includes(u.vaga));
+      const ks = us.map(u => chaveMaps(x.endereco, u.id, c.saida));
+      if (ks.every(k => res[k])) {
+        const porUnidade = us.map((u, i) => ({ unidade: u.id, min: res[ks[i]].min, km: null })).filter(p => p.min != null).sort((a, b) => a.min - b.min);
+        prontos[x.id] = porUnidade.length ? { ok: true, porUnidade, melhor: porUnidade[0], fonte: 'maps' }
+          : { ok: false, motivo: res[ks[0]].erro || 'sem rota de ônibus no Google Maps' };
+      } else {
+        ks.forEach((k, i) => { if (!res[k] && !ped[k]) { ped[k] = { origem: x.endereco, unidade: us[i].id, saida: c.saida, em: Date.now() }; mudouPed = true; } });
+      }
+    }
+    for (const k of Object.keys(ped)) if (res[k]) { delete ped[k]; mudouPed = true; }
+    if (mudouPed) gravar(K.mapsPedidos, ped);
+    if (Object.keys(prontos).length) {
+      const m = candidatos();
+      for (const [id, r] of Object.entries(prontos)) if (m[id] && !m[id].rota) m[id].rota = r;
+      salvarCandidatos(m);
+    }
+    if (Object.keys(ped).length) garantirAbaMaps();
+  }
+  // Abre (em segundo plano) a aba do Google Maps que faz as consultas, se nenhuma estiver trabalhando.
+  function garantirAbaMaps() {
+    const agora = Date.now();
+    if (agora - (ler(K.mapsVivo, {}).ts || 0) < 30e3) return; // já tem uma trabalhando
+    const ab = ler(K.mapsAbertura, {});
+    if (agora - (ab.em || 0) < 90e3) return; // acabou de abrir, ainda carregando
+    const vezes = agora - (ab.em || 0) < 20 * 60e3 ? (ab.vezes || 0) + 1 : 1;
+    if (vezes > 3) {
+      erroGeral = 'o Google Maps parou de responder. Abra o Google Maps e veja se ele pediu para confirmar que você não é um robô; depois clique em "tentar de novo"';
+      agendarRender();
+      return;
+    }
+    gravar(K.mapsAbertura, { em: agora, vezes });
+    GM_openInTab('https://www.google.com/maps?hl=pt-BR#pm-maps', { active: false, insert: true });
+  }
+
+  // Com chave: pergunta direto para a Routes API do Google.
+  function processarFilaApi() {
     if (ocupado) return;
     const c = cfg();
     if (!c.chave || erroGeral) return;
@@ -522,7 +679,7 @@
         origins: [{ waypoint: { address: `${prox.endereco}, Brasil` } }],
         destinations: destinos.map(u => ({ waypoint: { address: u.rota } })),
         travelMode: 'TRANSIT',
-        departureTime: proximoDiaUtil8h(),
+        departureTime: proximoDiaUtilSaida(),
         languageCode: 'pt-BR',
         regionCode: 'BR',
       }),
@@ -558,13 +715,13 @@
 
   // ------------------------------------------------------------------ situação de cada candidato
   const whats = x => (x.fones || []).find(ehCelular) || null;
-  const dentroDoLimite = (m, c = cfg()) => c.medida === 'km' ? m.km <= c.limite : m.min <= c.limite;
+  const dentroDoLimite = (m, c = cfg()) => m.min <= c.limite;
   // melhor loja para uma vaga específica (ou para qualquer vaga do candidato)
   const melhorPara = (x, vaga) => x.rota && x.rota.ok ? x.rota.porUnidade.filter(p => !vaga || unidade(p.unidade).vaga === vaga)[0] || null : null;
   function situacao(x, c) {
     if (!x.vagas.length) return { grupo: 'falta', motivo: 'não sei de qual vaga é', semVaga: true };
     if (!enderecoSuficiente(x.endereco)) return { grupo: 'falta', motivo: x.endereco ? `endereço incompleto (${x.endereco})` : 'sem endereço' };
-    if (!x.rota) return { grupo: 'falta', motivo: c.chave ? (erroGeral ? 'aguardando o Google' : 'calculando…') : 'falta a chave do Google' };
+    if (!x.rota) return { grupo: 'falta', motivo: erroGeral ? 'aguardando o Google' : c.chave ? 'calculando…' : 'consultando o Google Maps…' };
     if (!x.rota.ok) return { grupo: 'falta', motivo: x.rota.motivo };
     const m = x.rota.melhor;
     return { grupo: dentroDoLimite(m, c) ? 'dentro' : 'longe', melhor: m };
@@ -599,7 +756,6 @@
 
   function iniciarVerificacao(manual) {
     const c = cfg();
-    if (!c.chave) { alert('Antes, cole a chave do Google em ⚙ Ajustes.'); return; }
     const agora = Date.now();
     gravar(K.varredura, { ...ler(K.varredura, {}), rodando: true, desde: agora, ultimaTentativa: agora, erro: '' });
     gravar(K.worker, { inicio: agora, manual, fila: null, vagaAtual: null, urlVagas: null, paginas: 0, abriuAba: false, aprovados: [], log: [], teste: !c.curtirConfirmado, fim: null, erro: null });
@@ -716,13 +872,14 @@
     }
     const vaga = vagaAtual.vaga;
     const c = cfg();
-    if (!c.chave) return falhar('Falta a chave do Google (⚙ Ajustes).');
     const cards = lerCards(vaga);
     logar(`${vagaAtual.titulo}, página ${st.paginas + 1}: ${cards.length} candidatos`);
-    processarFila();
     const ids = cards.map(k => k.id);
-    await esperar(() => erroGeral || ids.every(id => { const x = candidatos()[id]; return !x || x.rota || !enderecoSuficiente(x.endereco); }), 180000, 800);
+    const semRota = () => ids.filter(id => { const x = candidatos()[id]; return x && !x.rota && enderecoSuficiente(x.endereco); });
+    if (semRota().length) logar(`Consultando o ônibus de ${semRota().length} candidato(s)…`);
+    await esperar(() => { processarFila(); return erroGeral || !semRota().length; }, 25 * 60e3, 1500);
     if (erroGeral) return falhar(`Google: ${erroGeral}`);
+    if (semRota().length) logar(`${semRota().length} ainda sem tempo de ônibus; ficam para a próxima verificação`);
 
     const perto = [];
     let jaAvaliados = 0;
@@ -813,7 +970,7 @@
   }
   function verificarAgenda() {
     const c = cfg();
-    if (!c.diario || !c.chave || souVerificador()) return;
+    if (!c.diario || souVerificador()) return;
     const v = ler(K.varredura, {});
     const agora = Date.now(), alvo = horaDeHoje(c.hora);
     if (agora < alvo) return;
@@ -826,7 +983,6 @@
   // ------------------------------------------------------------------ painel
   let raiz = null, renderAgendado = false;
   const agendarRender = () => { if (renderAgendado) return; renderAgendado = true; setTimeout(() => { renderAgendado = false; render(); }, 60); };
-  const linkRota = (origem, u) => `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(u.rota)}&travelmode=transit`;
 
   const CSS = `
     :host { all: initial; }
@@ -840,6 +996,7 @@
     header b { font-size: 13px; }
     header .cont { font-size: 12px; opacity: .9; margin-left: auto; white-space: nowrap; }
     .corpo { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+    .corpo > * { flex-shrink: 0; }
     .aviso { margin: 8px 10px 0; padding: 6px 8px; border-radius: 6px; background: #fff8c5; border: 1px solid #e9d68b; font-size: 12px; }
     .aviso.erro { background: #ffebe9; border-color: #f3b2ab; }
     .aviso.ok { background: #dafbe1; border-color: #a6e3b4; }
@@ -860,7 +1017,7 @@
     nav { display: flex; gap: 4px; margin: 8px 10px 0; }
     nav button { flex: 1; font: inherit; font-size: 12px; padding: 5px 4px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; color: #1f2328; }
     nav button.on { background: #7a2e55; border-color: #7a2e55; color: #fff; }
-    ul.lista { list-style: none; margin: 8px 0 0; padding: 0 10px; min-height: 40px; }
+    ul.lista { list-style: none; margin: 8px 0 0; padding: 0 10px; min-height: 90px; overflow: auto; flex-shrink: 1 !important; }
     ul.lista > li { padding: 7px 0; border-bottom: 1px solid #eaeef2; }
     ul.lista > li:last-child { border-bottom: 0; }
     .l1 { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
@@ -916,7 +1073,7 @@
     const itens = lista.filter(i => i.s.grupo === aba).sort((a, b) =>
       a.s.melhor && b.s.melhor ? ordem(a.s.melhor.unidade) - ordem(b.s.melhor.unidade) || a.s.melhor.min - b.s.melhor.min
         : (b.x.capturadoEm || 0) - (a.x.capturadoEm || 0));
-    const limTxt = c.medida === 'km' ? `${c.limite} km` : `${c.limite} min`;
+    const limTxt = `${c.limite} min`;
 
     const linha = ({ x, s }) => {
       const w = whats(x);
@@ -929,9 +1086,9 @@
         return `<li class="${s.grupo}"><div class="l1"><b>${esc(x.nome)}</b><span class="tag ${u.vaga}">${esc(VAGAS[u.vaga])}</span>
           ${curtida ? (/avaliado/.test(curtida.como) ? '<span class="tag" title="já tinha avaliação na Catho">já avaliado</span>'
             : `<span class="tag like" title="${esc(curtida.como)}">👍 ${esc(ddmm(curtida.em))}</span>`) : ''}
-          <span class="tempo">🚌 ${s.melhor.min} min · ${String(s.melhor.km).replace('.', ',')} km</span></div>
+          <span class="tempo">🚌 ${s.melhor.min} min${s.melhor.km != null ? ` · ${String(s.melhor.km).replace('.', ',')} km` : ''}</span></div>
           <div class="l2">Loja ${esc(u.nome)} — ${esc(u.endereco)}</div>
-          <div class="l2">WhatsApp: ${wHtml} · <a class="maps" href="${esc(linkRota(x.endereco, u))}" target="_blank" rel="noopener">ver rota</a>${outras ? ` · ${esc(outras)}` : ''}</div></li>`;
+          <div class="l2">WhatsApp: ${wHtml} · <a class="maps" href="${esc(urlMaps(x.endereco, u))}" target="_blank" rel="noopener">ver no Maps</a>${outras ? ` · ${esc(outras)}` : ''}</div></li>`;
       }
       const vagaBtns = s.semVaga ? Object.entries(VAGAS).map(([k, val]) => `<button class="mini" data-a="vaga" data-id="${esc(x.id)}" data-v="${k}">${esc(val)}</button>`).join('') : '';
       const tags = x.vagas.map(vg => `<span class="tag ${vg}">${esc(VAGAS[vg])}</span>`).join('');
@@ -941,7 +1098,6 @@
     };
 
     const avisos = [];
-    if (!c.chave) avisos.push(`<div class="aviso">Para calcular o ônibus, cole sua chave do Google em ⚙ Ajustes (veja o LEIA-ME).</div>`);
     if (erroGeral) avisos.push(`<div class="aviso erro">Google: ${esc(erroGeral)} <button class="mini" data-a="tentar">tentar de novo</button></div>`);
     if (st && st.conferencia && souVerificador() && confirmar) {
       avisos.push(`<div class="aviso conf"><b>Primeira vez: confira antes de eu clicar.</b><br>
@@ -959,6 +1115,8 @@
     if (rodando) statusTxt = `⏳ Verificando agora… ${st.aprovados.length} 👍 até aqui`;
     else if (v.ultimaOk) statusTxt = `🔁 ${c.diario ? `Todo dia às ${esc(c.hora)}` : 'Verificação diária desligada'} · última: ${esc(ddmm(v.ultimaOk))} ${esc(hhmm(v.ultimaOk))}${v.resumo ? ` (${v.resumo.aprovados.length} 👍)` : ''}`;
     else statusTxt = c.diario ? `🔁 Todo dia às ${esc(c.hora)} (deixe uma aba da Catho aberta)` : 'Verificação diária desligada';
+    const naFila = c.chave ? 0 : Object.keys(ler(K.mapsPedidos, {})).length;
+    if (naFila && !erroGeral) statusTxt += ` · 🗺️ ${naFila} rota${naFila > 1 ? 's' : ''} na fila do Google Maps`;
     const logHtml = st && st.log && st.log.length && (rodando || (st.fim && Date.now() - st.fim < 3600e3))
       ? `<div class="log">${esc(st.log.slice(-6).join('\n'))}</div>` : '';
     const vp = vagaDaPagina();
@@ -970,15 +1128,15 @@
         ${avisos.join('')}
         <div class="status"><span>${statusTxt}</span>${rodando || souVerificador() ? '' : '<button class="mini" data-a="verificar">Verificar agora</button>'}</div>
         ${logHtml}
-        <details ${(ajustesAbertos ?? !c.chave) ? 'open' : ''}><summary>⚙ Ajustes · limite ${esc(limTxt)} de ônibus · vaga desta página: ${esc(vp ? VAGAS[vp] : 'não identificada')}</summary>
+        <details ${ajustesAbertos ? 'open' : ''}><summary>⚙ Ajustes · limite ${esc(limTxt)} de ônibus · vaga desta página: ${esc(vp ? VAGAS[vp] : 'não identificada')}</summary>
           <div class="cfg">
-            <label>Chave Google</label><input type="password" data-c="chave" value="${esc(c.chave)}" placeholder="AIza…" autocomplete="off">
-            <label>Limite</label><span class="lim"><input type="number" min="1" step="1" data-c="limite" value="${esc(c.limite)}">
-              <select data-c="medida"><option value="min" ${c.medida === 'min' ? 'selected' : ''}>minutos de ônibus</option><option value="km" ${c.medida === 'km' ? 'selected' : ''}>km de ônibus</option></select></span>
+            <label>Limite</label><span class="lim">até <input type="number" min="1" step="1" data-c="limite" value="${esc(c.limite)}"> minutos de ônibus</span>
+            <label>Saída para o cálculo</label><span class="lim">dia útil às <input type="time" data-c="saida" value="${esc(c.saida)}"></span>
             <label>Verificar todo dia</label><span class="lim"><input type="checkbox" data-c="diario" ${c.diario ? 'checked' : ''}> às <input type="time" data-c="hora" value="${esc(c.hora)}"></span>
             <label>Pegar WhatsApp</label><span class="lim"><input type="checkbox" data-c="pegarWhats" ${c.pegarWhats ? 'checked' : ''}> abrir "contatos" de quem ganhou 👍</span>
             <label>Vaga desta página</label><select data-c="vagaPagina"><option value="">Automático (pelo título)</option>
               ${Object.entries(VAGAS).map(([k, val]) => `<option value="${k}" ${c.vagaPagina === k ? 'selected' : ''}>${esc(val)}</option>`).join('')}</select>
+            <label>Chave Google</label><input type="password" data-c="chave" value="${esc(c.chave)}" placeholder="opcional — sem ela, uso o Google Maps" autocomplete="off">
             <span class="nota">${c.curtirConfirmado ? '👍 automático: conferido por você ✓' : '👍 automático: na 1ª verificação eu marco os botões e espero você conferir.'}</span>
           </div></details>
         <nav>
@@ -1005,7 +1163,7 @@
     let v = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
     if (campo === 'limite') v = Math.max(1, Number(v) || CFG_PADRAO.limite);
     if (campo === 'chave') { v = String(v).trim(); erroGeral = ''; }
-    if (campo === 'hora' && !/^\d{2}:\d{2}$/.test(v)) v = CFG_PADRAO.hora;
+    if ((campo === 'hora' || campo === 'saida') && !/^\d{2}:\d{2}$/.test(v)) v = CFG_PADRAO[campo];
     gravar(K.cfg, { ...c, [campo]: v });
     ev.target.blur();
     render();
@@ -1019,7 +1177,7 @@
     const a = el.dataset.a;
     if (a === 'min') { gravar(K.ui, { ...ui, min: !ui.min }); render(); }
     else if (a === 'aba') { gravar(K.ui, { ...ui, aba: el.dataset.v }); render(); }
-    else if (a === 'tentar') { erroGeral = ''; render(); processarFila(); }
+    else if (a === 'tentar') { erroGeral = ''; gravar(K.mapsAbertura, {}); render(); processarFila(); }
     else if (a === 'verificar') iniciarVerificacao(true);
     else if (a === 'conf-sim' && confirmar) confirmar(true);
     else if (a === 'conf-nao' && confirmar) confirmar(false);
@@ -1031,7 +1189,7 @@
     else if (a === 'copiar') { GM_setClipboard(textoLista(), 'text'); flash(el, 'Copiado ✓'); }
     else if (a === 'csv') baixarCsv();
     else if (a === 'diag') { GM_setClipboard(JSON.stringify(diagnostico(), null, 1), 'text'); flash(el, 'Copiado ✓'); }
-    else if (a === 'limpar') { if (confirm('Apagar todos os candidatos guardados no filtro?')) salvarCandidatos({}); }
+    else if (a === 'limpar') { if (confirm('Apagar todos os candidatos guardados no filtro?')) { gravar(K.mapsPedidos, {}); salvarCandidatos({}); } }
   }
   const flash = (el, txt) => { const t = el.textContent; el.textContent = txt; setTimeout(() => { el.textContent = t; }, 1500); };
 
@@ -1047,7 +1205,7 @@
     const c = cfg();
     const grupos = dentroPorUnidade();
     if (!grupos.length) return 'Nenhum candidato dentro do limite ainda.';
-    const lim = c.medida === 'km' ? `${c.limite} km` : `${c.limite} min`;
+    const lim = `${c.limite} min`;
     return [`Candidatos até ${lim} de ônibus da loja`, ''].concat(grupos.flatMap(({ u, itens }) => [
       `*${VAGAS[u.vaga]} — Loja ${u.nome}*`,
       u.endereco,
@@ -1069,7 +1227,7 @@
       const w = whats(x);
       const curtida = u && x.curtidas && x.curtidas[u.vaga];
       linhas.push([x.nome, u ? VAGAS[u.vaga] : x.vagas.map(vg => VAGAS[vg]).join(' / '), u ? u.nome : '', u ? u.endereco : '',
-        w ? formatarFone(w) : x.fones.length ? `${formatarFone(x.fones[0])} (fixo)` : '', s.melhor ? s.melhor.min : '', s.melhor ? String(s.melhor.km).replace('.', ',') : '',
+        w ? formatarFone(w) : x.fones.length ? `${formatarFone(x.fones[0])} (fixo)` : '', s.melhor ? s.melhor.min : '', s.melhor && s.melhor.km != null ? String(s.melhor.km).replace('.', ',') : '',
         s.grupo === 'dentro' ? 'dentro do limite' : s.grupo === 'longe' ? 'longe' : s.motivo,
         curtida ? `${ddmm(curtida.em)} (${curtida.como})` : '', x.endereco]);
     }
@@ -1141,7 +1299,9 @@
       guardados: { total: lista.length, comEndereco: lista.filter(x => enderecoSuficiente(x.endereco)).length,
         comCelular: lista.filter(whats).length, comVaga: lista.filter(x => x.vagas.length).length, comRota: lista.filter(x => x.rota && x.rota.ok).length,
         curtidos: lista.filter(x => x.curtidas && Object.keys(x.curtidas).length).length },
-      temChave: !!c.chave, erroGoogle: erroGeral, vagaDaPagina: vagaDaPagina(), config: { limite: c.limite, medida: c.medida, diario: c.diario, hora: c.hora, curtirConfirmado: c.curtirConfirmado },
+      temChave: !!c.chave, erroGoogle: erroGeral, vagaDaPagina: vagaDaPagina(), config: { limite: c.limite, saida: c.saida, diario: c.diario, hora: c.hora, curtirConfirmado: c.curtirConfirmado },
+      googleMaps: { pedidos: Object.keys(ler(K.mapsPedidos, {})).length, respostas: Object.keys(ler(K.mapsRes, {})).length,
+        semRota: Object.values(ler(K.mapsRes, {})).filter(r => r.min == null).length, abaViva: Date.now() - (ler(K.mapsVivo, {}).ts || 0) < 30e3, aberturas: ler(K.mapsAbertura, {}) },
       verificacao: st ? { inicio: st.inicio, fim: st.fim, erro: st.erro, fila: (st.fila || []).map(f => ({ vaga: f.vaga, qtd: f.qtd, feito: f.feito, erro: f.erro })), log: (st.log || []).map(mascarar) } : null,
       endpoints: Object.fromEntries(Object.entries(diag.endpoints).map(([k, v]) => [mascarar(k.replace(/^https?:\/\/[^/]+/, '')), v])), dom: estruturaDom(),
     };
@@ -1156,6 +1316,8 @@
     try { GM_addValueChangeListener(K.cfg, (k, velho, novo, remoto) => { if (remoto) { erroGeral = ''; agendarRender(); processarFila(); } }); } catch (e) { /* ignora */ }
     try { GM_addValueChangeListener(K.worker, (k, velho, novo, remoto) => { if (remoto) agendarRender(); }); } catch (e) { /* ignora */ }
     try { GM_addValueChangeListener(K.varredura, (k, velho, novo, remoto) => { if (remoto) agendarRender(); }); } catch (e) { /* ignora */ }
+    try { GM_addValueChangeListener(K.mapsRes, (k, velho, novo, remoto) => { if (remoto) processarFila(); }); } catch (e) { /* ignora */ }
+    setInterval(processarFila, 5000);
     const lerTela = () => {
       lerJsonEmbutido();
       if (naAreaEmpresa() && !souVerificador()) lerCards();
