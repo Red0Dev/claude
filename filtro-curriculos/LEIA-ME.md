@@ -3,8 +3,9 @@
 Script do Tampermonkey que funciona na área de empresa da Catho. **Todo dia**, no horário que você
 escolher, ele faz isto sozinho:
 
-1. abre **Minhas vagas** e entra nos candidatos de **Auxiliar de Cozinha** e de **Atendente de Delivery**,
-   passando por todas as páginas;
+1. abre **Minhas vagas** e entra nos **inscritos** de cada vaga ativa de **Auxiliar de Cozinha** e de
+   **Atendente de Delivery**, passando por todas as páginas. Vagas desativadas ficam de fora (dá para
+   incluir em ⚙ Ajustes). O script **nunca** entra na busca do banco de currículos (a lupa "116.184 currículos");
 2. lê a cidade e o bairro de cada candidato (exemplo: "São Bernardo do Campo, SP - Jardim da represa");
 3. abre o **Google Maps** numa aba em segundo plano, do mesmo jeito que você faz na mão, e lê o tempo
    de **transporte público** do bairro até a loja da vaga, saindo num dia útil às 8h. A aba fecha sozinha no fim;
@@ -35,10 +36,13 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtr
 
 ## 2. Primeira verificação (conferência)
 
-1. Entre na Catho, na área da empresa, e clique em **Verificar agora** no painel **🍮 Filtro PudiMarin**,
+1. Entre na Catho e abra você mesmo os inscritos de uma das vagas, uma vez só. Assim o script aprende o
+   endereço da lista de inscritos e passa a abrir as outras vagas direto pelo número delas. Se você pular
+   este passo, ele tenta achar o caminho sozinho.
+2. Volte para **Minhas vagas** e clique em **Verificar agora** no painel **🍮 Filtro PudiMarin**,
    no canto de baixo da tela.
-2. Abre uma aba nova, que vai sozinha para as vagas e os candidatos.
-3. Na primeira vez, **antes de clicar**, ele marca com um quadrado vermelho o 👍 de quem está perto e pergunta
+3. Abre uma aba nova, que vai sozinha para as vagas e os candidatos.
+4. Na primeira vez, **antes de clicar**, ele marca com um quadrado vermelho o 👍 de quem está perto e pergunta
    se está certo.
    - Se o quadrado estiver mesmo no 👍 dessas pessoas, clique em **Sim, pode dar 👍**. Daí em diante ele faz isso sozinho.
    - Se estiver errado, clique em **Não, está errado**. Depois clique em **Diagnóstico** e cole o resultado
@@ -54,6 +58,9 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/filtr
   **"Catho: N candidatos perto, com 👍"**, com nome, vaga, loja, tempo de ônibus e WhatsApp.
 - Se algo der errado (por exemplo, a Catho pedir login de novo), chega uma notificação dizendo o
   que houve. Ele tenta de novo 2 horas depois.
+- **⏹ Parar**: enquanto a verificação roda, o painel mostra esse botão, em qualquer aba da Catho. Ao clicar,
+  ela para na hora, sem dar mais nenhum 👍, e só volta a rodar sozinha no dia seguinte. Para desligar de vez,
+  desmarque **⚙ Ajustes → Verificar todo dia**.
 
 ## O painel
 
