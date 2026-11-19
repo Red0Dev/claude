@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      2.3
+// @version      2.4
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '2.3';
+  const VERSAO = '2.4';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -325,8 +325,9 @@
     const mandouAtendente = /clt \(6x1\)|unidades vergueiro e nova petropolis/.test(nossas);
     // já mandou o currículo (agora ou antes) e diz a vaga: informações da vaga + obrigada (sem pedir o currículo de novo)
     const jaMandouCV = pdf || msgs.some(m => m.entrada && m.pdf) || (imagem && /curriculo/.test(ultimaSua));
-    if (jaMandouCV && (cozinha || atendente || freela)) {
-      if (freela) return mandouFreela ? 'recebi-cv' : 'freela-recebi';
+    // "vaga de domingo/sábado" sem citar cozinha ou atendente = freelancer
+    if (jaMandouCV && (cozinha || atendente || freela || dia)) {
+      if (freela || !(cozinha || atendente)) return mandouFreela ? 'recebi-cv' : 'freela-recebi';
       if (cozinha && atendente) return mandouCozinha && mandouAtendente ? 'recebi-cv' : 'ambas-recebi';
       if (cozinha) return mandouCozinha ? 'recebi-cv' : 'cozinha-recebi';
       return mandouAtendente ? 'recebi-cv' : 'atendente-recebi';
