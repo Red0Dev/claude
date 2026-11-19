@@ -26,6 +26,8 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
   - quer se candidatar sem dizer a vaga ("Quero me candidatar para a vaga") → **Qual vaga?**
     ("Boa tarde, para qual vaga seria?");
   - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (sábado ou domingo)**;
+    (o freelancer é de **Auxiliar de Cozinha na fábrica de Rudge Ramos**, sábado e domingo, R$ 160 + R$ 11,90 por
+    dia; o horário não vai na mensagem: se perguntarem, confirme com o responsável)
   - manda o currículo (PDF) dizendo a vaga ou o dia → **Recebi o currículo**;
   - fala em **Auxiliar de Cozinha ou "Auxiliar de produção"** (é a mesma vaga) → **Vaga de Auxiliar de Cozinha →
     pedir currículo** (descrição da vaga da Rudge Ramos). Se mostrar interesse depois → **Pedir o currículo**;
@@ -45,8 +47,8 @@ agradecer". Ajuste à vontade em ✏️ Editar.
 ## 🧩 Claude in Chrome: o Claude deixa as respostas escritas e você envia
 
 Com a extensão **Claude in Chrome** (planos pagos do Claude), o próprio Claude passa por todas as conversas
-não lidas de candidatos, deixa a resposta escrita em cada uma (o WhatsApp guarda como rascunho), marca a
-conversa como não lida de novo e no fim mostra a lista. Depois você abre uma por uma, confere e envia. Ele
+não lidas de candidatos, deixa a resposta escrita em cada uma (o WhatsApp guarda como rascunho, e a
+conversa aparece com "Draft:"/"Rascunho:" na lista) e no fim mostra a lista. Depois você abre uma por uma, confere e envia. Ele
 nunca envia sozinho. Não precisa de chave de API nem de copiar e colar.
 
 1. Instale o Claude in Chrome (Chrome Web Store, "Claude"), entre com a sua conta e permita o uso em
@@ -54,8 +56,8 @@ nunca envia sozinho. Não precisa de chave de API nem de copiar e colar.
 2. Com o WhatsApp Web aberto, abra o painel do Claude e cole o texto de
    [`instrucoes-claude-in-chrome.md`](instrucoes-claude-in-chrome.md).
 3. Salve esse texto como atalho (por exemplo, `/candidatos`). Nas próximas vezes, é só digitar `/candidatos`.
-4. Quando ele terminar, abra o filtro "Não lidas": as conversas com rascunho aparecem com a resposta pronta na
-   caixa. Confira, ajuste se precisar e aperte Enter.
+4. Quando ele terminar, abra as conversas que aparecem com "Draft:"/"Rascunho:" na lista: a resposta está
+   pronta na caixa. Confira, ajuste se precisar e aperte Enter.
 
 Quando mudar alguma vaga, atualize o texto do atalho.
 
