@@ -27,9 +27,14 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
   - quer se candidatar sem dizer a vaga ("Quero me candidatar para a vaga") → **Qual vaga?**
     ("Boa tarde, para qual vaga seria?");
   - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (sábado ou domingo)**;
-    (o freelancer é de **Auxiliar de Cozinha na fábrica de Rudge Ramos**, sábado e domingo, R$ 160 + R$ 11,90 por
-    dia; o horário não vai na mensagem: se perguntarem, confirme com o responsável)
-  - manda o currículo (PDF) dizendo a vaga ou o dia → **Recebi o currículo**;
+    (o freelancer é de **Atendente de Delivery na unidade Rudge Ramos** (Av. Ministro Osvaldo Aranha, 232), sábado e
+    domingo: sábado R$ 120 + R$ 11,90, domingo e feriado R$ 160 + R$ 11,90; o horário não vai na mensagem: se
+    perguntarem, confirme com o responsável)
+  - conversa em que você mandou a mensagem antiga (freelancer de auxiliar de cozinha) → **Correção: o freelancer é
+    de atendente**, mesmo que a pessoa ainda não tenha respondido;
+  - já mandou o currículo e diz a vaga (por exemplo, depois de "para qual vaga seria?") → **Já mandou o currículo →
+    informações da vaga** (agradece o currículo e manda a vaga; se falar em cozinha e atendente, manda as duas).
+    Se a vaga já tinha sido enviada → **Recebi o currículo**;
   - fala em **Auxiliar de Cozinha ou "Auxiliar de produção"** (é a mesma vaga) → **Vaga de Auxiliar de Cozinha →
     pedir currículo** (descrição da vaga da Rudge Ramos). Se mostrar interesse depois → **Pedir o currículo**;
   - depois da descrição do freelancer, diz o dia → **Pedir o currículo**; só diz que tem interesse → **Qual dia?**;

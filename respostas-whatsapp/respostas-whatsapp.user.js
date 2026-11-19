@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      2.2
+// @version      2.3
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '2.2';
+  const VERSAO = '2.3';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -99,24 +99,32 @@
     '',
     'Fico no aguardo da sua resposta',
   ].join('\n');
-  const FREELA_VAGA = [
-    '{saudacao}, tudo bem? No momento temos uma vaga de freelancer de auxiliar de cozinha.',
-    '',
-    '*Unidade Rudge Ramos (fábrica)*',
+  // Freelancer: atendente de delivery, sábado e domingo, unidade Rudge Ramos (Osvaldo Aranha)
+  const FREELA_CORPO = [
+    '*Unidade Rudge Ramos*',
     'As principais atividades da função são:',
-    '• Pesagem de ingredientes',
-    '• Preparação de massas e recheios (cookies e pudins)',
-    '• Assar os produtos',
-    '• Limpeza e organização da cozinha',
+    '• Atendimento ao cliente e caixa',
+    '• Receber pedidos via aplicativo',
+    '• Preparar os pedidos de forma ágil e organizada',
+    '• Organizar e conferir os pedidos antes da entrega',
+    '• Controlar o estoque',
+    '• Responder os clientes via WhatsApp',
     '',
-    'Freelancer FIXO de sábado e domingo, valor R$ 160 + 11,90 de transporte por dia.',
+    'Freelancer FIXO de sábado e domingo.',
+    'Valor: sábado R$ 120 + 11,90 de transporte; domingo e feriado R$ 160 + 11,90 de transporte.',
     'Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo',
+  ].join('\n');
+  const FREELA_VAGA = `{saudacao}, tudo bem? No momento temos uma vaga de freelancer de atendente de delivery.\n\n${FREELA_CORPO}\n`;
+  // Para quem recebeu a mensagem antiga (freelancer de auxiliar de cozinha, que não existe mais)
+  const FREELA_CORRECAO = [
+    '{saudacao}, tudo bem? Uma correção sobre a vaga de freelancer que te mandei: ela é para atendente de delivery, e não para auxiliar de cozinha. Seguem as informações certas:',
     '',
+    FREELA_CORPO,
+    '',
+    'Se continuar com interesse, me confirme por aqui (e envie o currículo, caso ainda não tenha enviado) para eu repassar ao responsável.',
   ].join('\n');
 
-  const COZINHA_VAGA = [
-    '{saudacao}, tudo bem? No momento temos uma vaga de auxiliar de cozinha (produção).',
-    '',
+  const COZINHA_CORPO = [
     '*Unidade Rudge Ramos*',
     'As principais atividades da função são:',
     '• Pesagem de ingredientes',
@@ -128,13 +136,8 @@
     'Horário: segunda a quinta das 8h00 às 18h00 e sexta-feira das 8h00 às 17h00',
     'Salário: R$ 1.981,04 + VA no cartão multibenefícios de R$ 332,40 + Vale-Transporte',
     'Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo',
-    '',
-    'Caso te interesse peço que envie o currículo para eu repassar ao responsável',
   ].join('\n');
-
-  const ATENDENTE_VAGA = [
-    '{saudacao}, tudo bem? No momento temos vaga de atendente de delivery.',
-    '',
+  const ATENDENTE_CORPO = [
     '*Unidades Vergueiro e Nova Petrópolis*',
     'As principais atividades da função são:',
     '• Atendimento ao cliente e caixa',
@@ -148,9 +151,14 @@
     'Horário: 6x na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30',
     'Salário: R$ 2.076,97 + VA no cartão multibenefícios de R$ 400,00 + Vale-Transporte',
     'Endereços: Av. Senador Vergueiro, 2123 - Rudge Ramos e Av. Francisco Prestes Maia, 957 - Centro (Nova Petrópolis), São Bernardo do Campo',
-    '',
-    'Caso te interesse peço que envie o currículo para eu repassar ao responsável',
   ].join('\n');
+  const PEDE_CV = 'Caso te interesse peço que envie o currículo para eu repassar ao responsável';
+  const COZINHA_VAGA = `{saudacao}, tudo bem? No momento temos uma vaga de auxiliar de cozinha (produção).\n\n${COZINHA_CORPO}\n\n${PEDE_CV}`;
+  const ATENDENTE_VAGA = `{saudacao}, tudo bem? No momento temos vaga de atendente de delivery.\n\n${ATENDENTE_CORPO}\n\n${PEDE_CV}`;
+  // Já mandou o currículo e disse a vaga: manda as informações da vaga e agradece (sem pedir o currículo de novo)
+  const RECEBI_ABRE = 'Perfeito, obrigada pelo currículo! Seguem as informações da vaga:';
+  const RECEBI_FECHA = 'Vou repassar o seu currículo para o responsável e já te retorno.';
+  const recebiCom = corpo => `${RECEBI_ABRE}\n\n${corpo}\n\n${RECEBI_FECHA}`;
 
   const RESPOSTAS = [
     { id: 'entrevista-online', grupo: 'Vaga CLT (Catho)', titulo: 'Tem interesse (Atendente) → entrevista online',
@@ -172,15 +180,25 @@
       texto: msgAtendente('Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo') },
     { id: 'cozinha-cv', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Vaga de Auxiliar de Cozinha → pedir currículo', texto: COZINHA_VAGA },
     { id: 'atendente-cv', grupo: 'Atendente (CLT 6x1)', titulo: 'Vaga de Atendente → informações + pedir currículo', texto: ATENDENTE_VAGA },
-    { id: 'freela-cv', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir currículo',
+    { id: 'freela-cv', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir currículo',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
-    { id: 'freela-disp', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir disponibilidade',
+    { id: 'cozinha-recebi', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Já mandou o currículo → informações da vaga de Auxiliar de Cozinha',
+      texto: recebiCom(COZINHA_CORPO) },
+    { id: 'atendente-recebi', grupo: 'Atendente (CLT 6x1)', titulo: 'Já mandou o currículo → informações da vaga de Atendente',
+      texto: recebiCom(ATENDENTE_CORPO) },
+    { id: 'ambas-recebi', grupo: 'Geral', titulo: 'Já mandou o currículo → informações das duas vagas (cozinha e atendente)',
+      texto: `Perfeito, obrigada pelo currículo! Seguem as informações das duas vagas:\n\n*Auxiliar de Cozinha (produção)*\n${COZINHA_CORPO}\n\n*Atendente de delivery*\n${ATENDENTE_CORPO}\n\n${RECEBI_FECHA}` },
+    { id: 'freela-recebi', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Já mandou o currículo → informações do freelancer',
+      texto: recebiCom(FREELA_CORPO) },
+    { id: 'freela-correcao', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Correção: o freelancer é de atendente (para quem recebeu a mensagem antiga)',
+      texto: FREELA_CORRECAO },
+    { id: 'freela-disp', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir disponibilidade',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que me informe a sua disponibilidade para eu repassar ao responsável` },
-    { id: 'qual-dia', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Qual dia? (sábado ou domingo)',
+    { id: 'qual-dia', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Qual dia? (sábado ou domingo)',
       texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!' },
     { id: 'freela-ok', grupo: 'Geral', titulo: 'Está disponível → deixar currículo',
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
-    { id: 'pedir-cv-dia', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Pedir currículo e dia',
+    { id: 'pedir-cv-dia', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Pedir currículo e dia',
       texto: 'Perfeito! Pode me enviar o seu currículo e me dizer se seria sábado ou domingo? Vou repassar para o responsável.' },
     { id: 'pedir-cv', grupo: 'Geral', titulo: 'Pedir o currículo',
       texto: 'Perfeito! Pode me enviar o seu currículo, por favor? Vou repassar para o responsável.' },
@@ -260,8 +278,8 @@
     }
     for (const m of [...c.msgs].reverse()) {
       const t = norm(m.texto);
+      if (FREELA.test(t)) return { catho: false, rotulo: 'Interessado no freelancer (atendente, sáb e dom)' };
       if (/(cozinh|producao)/.test(t)) return { catho: false, rotulo: 'Interessado em Auxiliar de Cozinha (produção)' };
-      if (FREELA.test(t)) return { catho: false, rotulo: 'Interessado no freelancer' };
       if (/(atendente|delivery)/.test(t)) return { catho: false, rotulo: 'Interessado na vaga de atendente' };
     }
     const tudo = norm(c.msgs.map(m => m.texto).join(' '));
@@ -275,6 +293,9 @@
     let i = msgs.length - 1;
     while (i >= 0 && msgs[i].entrada) i--;
     const novas = msgs.slice(i + 1).filter(m => m.entrada);
+    // recebeu a mensagem antiga do freelancer (auxiliar de cozinha) e ainda não recebeu a correção
+    const enviadas = norm(msgs.filter(m => !m.entrada).map(m => m.texto).join(' '));
+    if (/freelancer de auxiliar de cozinha/.test(enviadas) && !/correcao sobre a vaga de freelancer|freelancer de atendente de delivery/.test(enviadas)) return 'freela-correcao';
     if (!novas.length) return null; // a última mensagem é sua
     const t = norm(novas.map(m => m.texto).join(' '));
     const pdf = novas.some(m => m.pdf), imagem = novas.some(m => m.imagem);
@@ -299,22 +320,32 @@
     if (imagem && !t.trim() && /curriculo/.test(norm(msgs[i] ? msgs[i].texto : ''))) return 'recebi-cv';
     const cozinha = /(cozinh|producao)/.test(t), freela = FREELA.test(t), atendente = /(atendente|delivery)/.test(t);
     const ctxFreela = FREELA.test(conversaToda);
-    const mandouFreela = /freelancer fixo/.test(nossas), mandouCozinha = /auxiliar de cozinha \(producao\)/.test(nossas);
+    // já mandou a descrição da vaga (pela abertura ou pelo corpo da mensagem)
+    const mandouFreela = /freelancer fixo/.test(nossas), mandouCozinha = /auxiliar de cozinha \(producao\)|clt \(5x2\)/.test(nossas);
+    const mandouAtendente = /clt \(6x1\)|unidades vergueiro e nova petropolis/.test(nossas);
+    // já mandou o currículo (agora ou antes) e diz a vaga: informações da vaga + obrigada (sem pedir o currículo de novo)
+    const jaMandouCV = pdf || msgs.some(m => m.entrada && m.pdf) || (imagem && /curriculo/.test(ultimaSua));
+    if (jaMandouCV && (cozinha || atendente || freela)) {
+      if (freela) return mandouFreela ? 'recebi-cv' : 'freela-recebi';
+      if (cozinha && atendente) return mandouCozinha && mandouAtendente ? 'recebi-cv' : 'ambas-recebi';
+      if (cozinha) return mandouCozinha ? 'recebi-cv' : 'cozinha-recebi';
+      return mandouAtendente ? 'recebi-cv' : 'atendente-recebi';
+    }
     // mandou currículo
     if (pdf || /curriculo/.test(t)) {
       if (dia || cozinha || freela || atendente || mandouCozinha || mandouFreela) return 'recebi-cv';
       return ctxFreela ? 'qual-dia' : 'qual-vaga';
     }
+    // freelancer (mesmo que fale em cozinha: o freelancer agora é de atendente)
+    if (freela && !mandouFreela) return 'freela-cv';
     // vaga de Auxiliar de Cozinha / produção
     if (cozinha) return mandouCozinha ? 'pedir-cv' : 'cozinha-cv';
-    // vaga de freelancer (atendente)
-    // primeiro contato sobre o freelancer: informações da vaga + pedir o currículo
-    if (freela && !mandouFreela) return 'freela-cv';
     // atendente sem falar em freelancer = vaga CLT 6x1 (Vergueiro / Nova Petrópolis)
-    const mandouAtendente = /vaga de atendente de delivery\.? \*?unidades vergueiro/.test(nossas) || /unidades vergueiro e nova petropolis/.test(nossas);
     if (atendente && !freela) return mandouAtendente ? (/(interess|quero|sim|pode ser|aceito)/.test(t) ? 'pedir-cv' : null) : 'atendente-cv';
     // já recebeu as informações do freelancer
     if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
+    // já mandou o currículo antes (ex.: depois da mensagem antiga) e confirmou depois da correção
+    if (mandouFreela && msgs.some(m => m.entrada && m.pdf) && /(interess|quero|sim|pode ser|aceito|confirm|continuo)/.test(t)) return 'recebi-cv';
     if (freela || mandouFreela) return dia ? 'pedir-cv' : 'pedir-cv-dia';
     if (dia && ctxFreela) return 'pedir-cv';
     // demonstrou interesse depois da descrição da cozinha
@@ -376,16 +407,18 @@
 ## Vagas (use só estas informações)
 1. Auxiliar de Cozinha (CLT), que também chamamos de "Auxiliar de produção" (é a mesma vaga). Fábrica de Rudge Ramos: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo. CLT 5x2: segunda a quinta das 8h00 às 18h00 e sexta das 8h00 às 17h00. Salário R$ 1.981,04, VA no cartão multibenefícios R$ 332,40 e vale-transporte. Atividades: pesagem de ingredientes; preparação de massas e recheios (cookies e pudins); assar os produtos; limpeza e organização da cozinha.
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
-3. Freelancer de Auxiliar de Cozinha, FIXO de sábado e domingo, na fábrica de Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). R$ 160 + R$ 11,90 de transporte por dia. Mesmas atividades da vaga de Auxiliar de Cozinha. Não informe horário: se perguntarem, diga que vai confirmar com o responsável.
+3. Freelancer de Atendente de Delivery, FIXO de sábado e domingo, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). Valor: sábado R$ 120 + R$ 11,90 de transporte; domingo e feriado R$ 160 + R$ 11,90 de transporte. Mesmas atividades da vaga de Atendente. Não informe horário: se perguntarem, diga que vai confirmar com o responsável. No momento não há vaga de freelancer de Auxiliar de Cozinha.
 
-Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é só a de Auxiliar de Cozinha na fábrica de Rudge Ramos: use-a só quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa falar de freelancer de atendente ou de delivery, explique que a vaga de freelancer é de Auxiliar de Cozinha e mande as informações dela.
+Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é de atendente de delivery, só aos sábados e domingos, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232): use-a quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa pedir freelancer de auxiliar de cozinha, diga que no momento a vaga de freelancer é de atendente de delivery e mande as informações dela.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem a mensagem da vaga. Se confirmarem interesse, ela pergunta a disponibilidade para a entrevista: Atendente → "Que bom! E como está a sua disponibilidade para uma entrevista online?"; Auxiliar de Cozinha (CLT) → "Que bom! E como está a sua disponibilidade para uma entrevista presencial na nossa unidade?". O freelancer não tem entrevista nessa etapa: só pedir o currículo.
 - A entrevista online (vaga de Atendente) quem faz sou eu: nessa etapa nunca diga que vai repassar para o responsável. Se a pessoa ainda não disse quando pode, pergunte "Perfeito! Qual o melhor dia e horário para você?". Se ela já disse quando pode (ex.: "disponibilidade total", "amanhã de manhã", "hoje às 15h"), quem escolhe o horário sou eu. Nesse caso, proponha com espaço para ela completar: "Perfeito! Podemos fazer a entrevista online [dia] às [horário]?".
 - Entrevista presencial (Auxiliar de Cozinha CLT): depois que a pessoa disser a disponibilidade, diga "Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia e o horário da entrevista."
 - Freelancer: se a pessoa falar da vaga de freelancer e ainda não tiver mandado o currículo, mandar as informações da vaga E pedir o currículo (mensagem pronta "Vaga de freelancer"). Se ela não disse o dia, perguntar se seria sábado ou domingo.
+- Se a conversa tem a mensagem antiga do freelancer ("vaga de freelancer de auxiliar de cozinha") e ainda não tem a correção, a resposta é a mensagem pronta "Correção: o freelancer é de atendente", mesmo que a última mensagem seja dela.
 - Se a pessoa perguntar da vaga de atendente (sem falar em freelancer) e ainda não tiver mandado o currículo, mandar as informações da vaga de atendente CLT E pedir o currículo (mensagem pronta "Vaga de Atendente").
+- Se a pessoa já mandou o currículo e diz a vaga (por exemplo, respondendo "para qual vaga seria?") e ainda não recebeu as informações dessa vaga: mandar as informações da vaga, agradecendo o currículo, sem pedir o currículo de novo (mensagens prontas "Já mandou o currículo → informações..."). Se ela disser duas vagas ou que não tem preferência, mandar as informações das duas.
 - Se a pessoa não disser a vaga, perguntar para qual vaga seria.
 - Se o currículo não tiver o bairro, pedir o bairro.
 
