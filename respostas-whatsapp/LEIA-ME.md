@@ -42,6 +42,20 @@ Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vag
 currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
 agradecer". Ajuste à vontade em ✏️ Editar.
 
+## 🧩 Claude in Chrome: o Claude responde as conversas e você aprova
+
+Com a extensão **Claude in Chrome** (planos pagos do Claude), o próprio Claude lê o WhatsApp Web, escreve a
+resposta na caixa e só envia depois que você aprova. Não precisa de chave de API nem de copiar e colar.
+
+1. Instale o Claude in Chrome (Chrome Web Store, "Claude"), entre com a sua conta e permita o uso em
+   web.whatsapp.com.
+2. Com o WhatsApp Web aberto, abra o painel do Claude e cole o texto de
+   [`instrucoes-claude-in-chrome.md`](instrucoes-claude-in-chrome.md).
+3. Salve esse texto como atalho (por exemplo, `/candidatos`). Nas próximas vezes, é só digitar `/candidatos`.
+4. Para cada conversa, ele mostra a resposta e pergunta "Envio? (sim / ajuste / pular)". Responda no painel.
+
+Quando mudar alguma vaga, atualize o texto do atalho.
+
 ## 📋 Usar o Claude da sua assinatura (sem chave de API)
 
 Se você já usa o Claude (claude.ai, app do Claude ou Claude in Chrome), dá para pedir a resposta a ele sem
