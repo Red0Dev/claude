@@ -42,17 +42,20 @@ Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vag
 currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
 agradecer". Ajuste à vontade em ✏️ Editar.
 
-## 🧩 Claude in Chrome: o Claude responde as conversas e você aprova
+## 🧩 Claude in Chrome: o Claude deixa as respostas escritas e você envia
 
-Com a extensão **Claude in Chrome** (planos pagos do Claude), o próprio Claude lê o WhatsApp Web, escreve a
-resposta na caixa e só envia depois que você aprova. Não precisa de chave de API nem de copiar e colar.
+Com a extensão **Claude in Chrome** (planos pagos do Claude), o próprio Claude passa por todas as conversas
+não lidas de candidatos, deixa a resposta escrita em cada uma (o WhatsApp guarda como rascunho), marca a
+conversa como não lida de novo e no fim mostra a lista. Depois você abre uma por uma, confere e envia. Ele
+nunca envia sozinho. Não precisa de chave de API nem de copiar e colar.
 
 1. Instale o Claude in Chrome (Chrome Web Store, "Claude"), entre com a sua conta e permita o uso em
    web.whatsapp.com.
 2. Com o WhatsApp Web aberto, abra o painel do Claude e cole o texto de
    [`instrucoes-claude-in-chrome.md`](instrucoes-claude-in-chrome.md).
 3. Salve esse texto como atalho (por exemplo, `/candidatos`). Nas próximas vezes, é só digitar `/candidatos`.
-4. Para cada conversa, ele mostra a resposta e pergunta "Envio? (sim / ajuste / pular)". Responda no painel.
+4. Quando ele terminar, abra o filtro "Não lidas": as conversas com rascunho aparecem com a resposta pronta na
+   caixa. Confira, ajuste se precisar e aperte Enter.
 
 Quando mudar alguma vaga, atualize o texto do atalho.
 

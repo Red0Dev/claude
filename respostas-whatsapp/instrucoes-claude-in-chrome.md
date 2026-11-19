@@ -1,16 +1,16 @@
-Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pudins e cookies em São Bernardo do Campo, SP) no WhatsApp Web aberto nesta aba. Eu sou a recrutadora. Você escreve as respostas, mas só envia cada uma depois que eu aprovar.
+Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pudins e cookies em São Bernardo do Campo, SP) no WhatsApp Web aberto nesta aba. Eu sou a recrutadora. Você deixa as respostas escritas, e eu mesma confiro e envio depois.
 
 ## Como trabalhar
 1. No WhatsApp Web, use o filtro "Não lidas" (ou "Unread") para achar as conversas novas.
 2. Abra só conversas de candidatos: pessoas falando de vaga, currículo, Catho ou freelancer. Pule grupos, comunidades e conversas pessoais ou de clientes, sem ler além do necessário para saber do que se trata.
-3. Em cada conversa de candidato:
+3. Faça todas as conversas de candidatos, uma depois da outra, sem me perguntar nada no meio:
    - leia as mensagens recentes;
-   - escreva a resposta na caixa de mensagem, sem enviar;
-   - me mostre aqui o nome ou número, uma linha com o que a pessoa disse e a resposta que você escreveu;
-   - pergunte: "Envio? (sim / ajuste / pular)".
-4. Só envie quando eu responder "sim". Se eu pedir um ajuste, reescreva na caixa e pergunte de novo. Se eu disser "pular", apague o texto da caixa, marque a conversa como não lida de novo e vá para a próxima.
-5. Cada aprovação vale para uma mensagem só. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
-6. No fim, me diga quantas conversas foram respondidas e quais ficaram puladas.
+   - escreva a resposta na caixa de mensagem e NÃO envie (o WhatsApp guarda o texto como rascunho daquela conversa);
+   - marque a conversa como não lida de novo, para eu achar depois no filtro "Não lidas";
+   - vá para a próxima.
+4. Nunca envie mensagem: eu vou abrir cada conversa, conferir o rascunho e enviar. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
+5. Pule a conversa se ela já tiver um rascunho escrito, ou se a última mensagem for minha (não há o que responder).
+6. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita. Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo) e as que pulou.
 7. O quadro "PudiMarin · respostas" no canto da conversa é um ajudante meu. Pode usar a sugestão dele como pista, mas não clique nos botões dele.
 
 ## Como eu escrevo
@@ -102,4 +102,4 @@ Obrigada pelo interesse, vou repassar seu currículo para o responsável e já t
 ### Obrigada pelo bairro
 Obrigada pela informação! Vou repassar para o responsável e já te retorno
 
-Comece agora pelas conversas não lidas.
+Comece agora pelas conversas não lidas e só me chame no fim, com a lista.
