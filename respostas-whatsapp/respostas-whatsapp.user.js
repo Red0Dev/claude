@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.6
+// @version      1.7
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.6';
+  const VERSAO = '1.7';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -111,7 +111,7 @@
     '• Controlar o estoque',
     '• Responder os clientes via WhatsApp',
     '',
-    'Freelancer FIXO de domingo, segunda ou terça das 11h30 as 20h30, valor R$ 120 + 11,90 de transporte na segunda e terça e 160 + 11,90 dia de domingo.',
+    'Freelancer FIXO de sábado e domingo das 11h30 as 20h30, valor R$ 160 + 11,90 de transporte por dia.',
     'Endereço: Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo',
     '',
   ].join('\n');
@@ -149,8 +149,8 @@
       texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
     { id: 'freela-disp', grupo: 'Freelancer (atendente)', titulo: 'Vaga disponível → pedir disponibilidade',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que me informe a sua disponibilidade para eu repassar ao responsável` },
-    { id: 'qual-dia', grupo: 'Freelancer (atendente)', titulo: 'Qual dia? (dom, seg ou ter)',
-      texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para domingo, segunda e terça. Obrigada!' },
+    { id: 'qual-dia', grupo: 'Freelancer (atendente)', titulo: 'Qual dia? (sábado ou domingo)',
+      texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!' },
     { id: 'freela-ok', grupo: 'Geral', titulo: 'Está disponível → deixar currículo',
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
     { id: 'pedir-cv', grupo: 'Geral', titulo: 'Pedir o currículo',
@@ -248,7 +248,7 @@
     if (!novas.length) return null; // a última mensagem é sua
     const t = norm(novas.map(m => m.texto).join(' '));
     const pdf = novas.some(m => m.pdf), imagem = novas.some(m => m.imagem);
-    const dia = /(domingo|segunda|terca|\bdom\b|\bseg\b|\bter\b)/.test(t);
+    const dia = /(sabado|domingo|\bsab\b|\bdom\b|fina(l|is) de semana|fi(m|ns) de semana)/.test(t);
     if (/(nao tenho (mais )?interesse|sem interesse|nao (vou|posso|consigo)|ja (estou|consegui|arrumei)|desist)/.test(t)) return 'sem-interesse';
     const ultimaSua = i >= 0 ? norm(msgs[i].texto) : '';
     const nossas = norm(msgs.filter(m => !m.entrada).map(m => m.texto).join(' '));
@@ -332,11 +332,11 @@
 ## Vagas (use só estas informações)
 1. Auxiliar de Cozinha, que também chamamos de "Auxiliar de produção" (é a mesma vaga). Loja Rudge Ramos: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo. CLT 5x2: segunda a quinta das 8h00 às 18h00 e sexta das 8h00 às 17h00. Salário R$ 1.981,04, VA no cartão multibenefícios R$ 332,40 e vale-transporte. Atividades: pesagem de ingredientes; preparação de massas e recheios (cookies e pudins); assar os produtos; limpeza e organização da cozinha.
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
-3. Atendente de delivery freelancer FIXO, unidade Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo): domingo, segunda ou terça, das 11h30 às 20h30. R$ 120 + R$ 11,90 de transporte na segunda e na terça; R$ 160 + R$ 11,90 no domingo. Mesmas atividades da vaga de atendente.
+3. Atendente de delivery freelancer FIXO, unidade Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo): sábado e domingo, das 11h30 às 20h30. R$ 160 + R$ 11,90 de transporte por dia. Mesmas atividades da vaga de atendente.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem a mensagem da vaga. Se confirmarem interesse, ela repassa ao responsável e retorna com os próximos passos.
-- Freelancer: pedir o currículo e qual dia a pessoa quer (domingo, segunda ou terça).
+- Freelancer: pedir o currículo e qual dia a pessoa quer (sábado ou domingo).
 - Se a pessoa não disser a vaga, perguntar para qual vaga seria.
 - Se o currículo não tiver o bairro, pedir o bairro.
 

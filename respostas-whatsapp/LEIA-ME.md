@@ -25,7 +25,7 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
   - pergunta se a vaga de freelancer ainda está disponível → **Está disponível → deixar currículo**;
   - quer se candidatar sem dizer a vaga ("Quero me candidatar para a vaga") → **Qual vaga?**
     ("Boa tarde, para qual vaga seria?");
-  - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (dom, seg ou ter)**;
+  - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (sábado ou domingo)**;
   - manda o currículo (PDF) dizendo a vaga ou o dia → **Recebi o currículo**;
   - fala em **Auxiliar de Cozinha ou "Auxiliar de produção"** (é a mesma vaga) → **Vaga de Auxiliar de Cozinha →
     pedir currículo** (descrição da vaga da Rudge Ramos). Se mostrar interesse depois → **Pedir o currículo**;
@@ -74,7 +74,7 @@ inventar.
 **Usar:**
 - Clique em **✨ Escrever com IA**. A resposta entra na caixa de mensagem; você confere e aperta Enter.
 - Para direcionar, escreva no campo antes de clicar. Exemplos: "explicar o horário", "marcar entrevista
-  quinta às 10h", "dizer que a vaga de domingo já foi preenchida". Enter no campo também gera.
+  quinta às 10h", "dizer que a vaga de sábado já foi preenchida". Enter no campo também gera.
 - **↻ Outra versão** pede um texto diferente.
 
 **Custo:** com o modelo padrão (Claude Opus 5.5), cada resposta custa por volta de US$ 0,01 a 0,02. Em
