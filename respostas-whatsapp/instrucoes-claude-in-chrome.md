@@ -9,7 +9,7 @@ Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pu
    - escreva a resposta na caixa de mensagem e NÃO envie (o WhatsApp guarda o texto como rascunho daquela conversa);
    - vá para a próxima.
 5. Nunca envie mensagem: eu vou abrir cada conversa, conferir o rascunho e enviar. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
-6. Se a conversa já tiver um rascunho, confira se ele segue estas instruções: se seguir, deixe como está; se não seguir, troque pelo certo e diga na lista que trocou. Pule a conversa se a última mensagem for minha (não há o que responder), a não ser no caso da correção do freelancer (veja abaixo). Pule também conversas que precisam de decisão minha (remarcar entrevista, reclamação, negociação, conversa já depois da entrevista): coloque na lista de dúvidas, sem rascunho.
+6. Se a conversa já tiver um rascunho, confira se ele segue estas instruções: se seguir, deixe como está; se não seguir, troque pelo certo e diga na lista que trocou. Rascunhos do freelancer com o endereço da Prestes Maia, com horário das 11h30 às 20h30, com "R$ 160 + 11,90 de transporte por dia" ou sem os feriados estão errados. Pule a conversa se a última mensagem for minha (não há o que responder), a não ser no caso da correção do freelancer (veja abaixo). Pule também conversas que precisam de decisão minha (remarcar entrevista, reclamação, negociação, conversa já depois da entrevista): coloque na lista de dúvidas, sem rascunho.
 7. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita (marque os rascunhos que você trocou). Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo), as que estão "Para você marcar a entrevista" e as que pulou.
 8. O quadro "PudiMarin · respostas" no canto da conversa é um ajudante meu. Pode usar a sugestão dele como pista, mas não clique nos botões dele.
 
@@ -22,9 +22,9 @@ Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pu
 ## Vagas (use só estas informações)
 1. Auxiliar de Cozinha (CLT), que também chamamos de "Auxiliar de produção" (é a mesma vaga). Fábrica de Rudge Ramos: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo. CLT 5x2: segunda a quinta das 8h00 às 18h00 e sexta das 8h00 às 17h00. Salário R$ 1.981,04, VA no cartão multibenefícios R$ 332,40 e vale-transporte. Atividades: pesagem de ingredientes; preparação de massas e recheios (cookies e pudins); assar os produtos; limpeza e organização da cozinha.
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
-3. Freelancer de Atendente de Delivery, FIXO de sábado e domingo, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). Valor: sábado R$ 120 + R$ 11,90 de transporte; domingo e feriado R$ 160 + R$ 11,90 de transporte. Mesmas atividades da vaga de Atendente. Não informe horário: se perguntarem, diga que vou confirmar com o responsável. No momento não há vaga de freelancer de Auxiliar de Cozinha.
+3. Freelancer de Atendente de Delivery, FIXO de sábado, domingo e feriados, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). Valor por dia: sábado R$ 120 + R$ 11,90 de transporte; domingo e feriados R$ 160 + R$ 11,90 de transporte (nunca diga que é R$ 160 por dia em todos os dias). Sempre diga que o freelancer também trabalha nos feriados. Mesmas atividades da vaga de Atendente. Não informe horário: se perguntarem, diga que vou confirmar com o responsável. No momento não há vaga de freelancer de Auxiliar de Cozinha.
 
-Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é de atendente de delivery, só aos sábados e domingos, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232): use-a quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa pedir freelancer de auxiliar de cozinha, diga que no momento a vaga de freelancer é de atendente de delivery e mande as informações dela.
+Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é de atendente de delivery, aos sábados, domingos e feriados, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232): use-a quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa pedir freelancer de auxiliar de cozinha, diga que no momento a vaga de freelancer é de atendente de delivery e mande as informações dela.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem de mim a mensagem da vaga (ela começa com "Você se cadastrou em nossa vaga de ... na Catho"). Se confirmarem interesse, pergunte a disponibilidade para a entrevista: Atendente → entrevista online; Auxiliar de Cozinha (CLT) → entrevista presencial na nossa unidade. Use as mensagens prontas "Tem interesse". O freelancer não tem entrevista nessa etapa: só pedir o currículo.
@@ -63,7 +63,7 @@ Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia 
 ### Sem interesse → agradecer
 Tudo bem, {nome}! Obrigada pelo retorno.
 
-### Vaga de freelancer (Atendente de Delivery, sábado e domingo) → informações + pedir currículo
+### Vaga de freelancer (Atendente de Delivery, sábado, domingo e feriados) → informações + pedir currículo
 {saudacao}, tudo bem? No momento temos uma vaga de freelancer de atendente de delivery.
 
 *Unidade Rudge Ramos*
@@ -75,8 +75,9 @@ As principais atividades da função são:
 • Controlar o estoque
 • Responder os clientes via WhatsApp
 
-Freelancer FIXO de sábado e domingo.
-Valor: sábado R$ 120 + 11,90 de transporte; domingo e feriado R$ 160 + 11,90 de transporte.
+Freelancer FIXO de sábado, domingo e feriados.
+Sábado: R$ 120 + 11,90 de transporte
+Domingo e feriados: R$ 160 + 11,90 de transporte
 Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo
 
 Caso te interesse peço que envie o currículo para eu repassar ao responsável
@@ -93,8 +94,9 @@ As principais atividades da função são:
 • Controlar o estoque
 • Responder os clientes via WhatsApp
 
-Freelancer FIXO de sábado e domingo.
-Valor: sábado R$ 120 + 11,90 de transporte; domingo e feriado R$ 160 + 11,90 de transporte.
+Freelancer FIXO de sábado, domingo e feriados.
+Sábado: R$ 120 + 11,90 de transporte
+Domingo e feriados: R$ 160 + 11,90 de transporte
 Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo
 
 Se continuar com interesse, me confirme por aqui (e envie o currículo, caso ainda não tenha enviado) para eu repassar ao responsável.
@@ -216,8 +218,9 @@ As principais atividades da função são:
 • Controlar o estoque
 • Responder os clientes via WhatsApp
 
-Freelancer FIXO de sábado e domingo.
-Valor: sábado R$ 120 + 11,90 de transporte; domingo e feriado R$ 160 + 11,90 de transporte.
+Freelancer FIXO de sábado, domingo e feriados.
+Sábado: R$ 120 + 11,90 de transporte
+Domingo e feriados: R$ 160 + 11,90 de transporte
 Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo
 
 Vou repassar o seu currículo para o responsável e já te retorno.
@@ -226,7 +229,7 @@ Vou repassar o seu currículo para o responsável e já te retorno.
 Perfeito! Pode me enviar o seu currículo e me dizer se seria sábado ou domingo? Vou repassar para o responsável.
 
 ### Qual dia?
-{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!
+{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado, domingo e feriados. Obrigada!
 
 ### Está disponível → deixar currículo
 Está sim, pode deixar o seu currículo que eu repasso para o responsável

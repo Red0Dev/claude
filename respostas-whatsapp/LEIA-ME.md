@@ -27,8 +27,8 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
   - quer se candidatar sem dizer a vaga ("Quero me candidatar para a vaga") → **Qual vaga?**
     ("Boa tarde, para qual vaga seria?");
   - fala em freelance sem dizer o dia, ou manda currículo sem dizer a vaga → **Qual dia? (sábado ou domingo)**;
-    (o freelancer é de **Atendente de Delivery na unidade Rudge Ramos** (Av. Ministro Osvaldo Aranha, 232), sábado e
-    domingo: sábado R$ 120 + R$ 11,90, domingo e feriado R$ 160 + R$ 11,90; o horário não vai na mensagem: se
+    (o freelancer é de **Atendente de Delivery na unidade Rudge Ramos** (Av. Ministro Osvaldo Aranha, 232), sábado,
+    domingo e feriados: sábado R$ 120 + R$ 11,90, domingo e feriados R$ 160 + R$ 11,90; o horário não vai na mensagem: se
     perguntarem, confirme com o responsável)
   - conversa em que você mandou a mensagem antiga (freelancer de auxiliar de cozinha) → **Correção: o freelancer é
     de atendente**, mesmo que a pessoa ainda não tenha respondido;
@@ -117,3 +117,6 @@ O WhatsApp Web muda de vez em quando. Se o quadro não aparecer, não reconhecer
 entrar na caixa, o texto já fica copiado: clique na caixa e aperte **Ctrl+V**. Depois clique em
 **Diagnóstico** e cole o resultado no chat com o Claude. O diagnóstico copia só a estrutura da página, sem
 os textos das conversas.
+
+Na versão 2.5, os textos do freelancer que você tinha editado no ✏️ voltaram para o texto novo, porque ainda
+tinham a vaga antiga (endereço da Prestes Maia, R$ 160 todos os dias). Os outros textos editados continuam iguais.

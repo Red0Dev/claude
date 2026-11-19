@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      2.4
+// @version      2.5
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '2.4';
+  const VERSAO = '2.5';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -99,7 +99,7 @@
     '',
     'Fico no aguardo da sua resposta',
   ].join('\n');
-  // Freelancer: atendente de delivery, sábado e domingo, unidade Rudge Ramos (Osvaldo Aranha)
+  // Freelancer: atendente de delivery, sábado, domingo e feriados, unidade Rudge Ramos (Osvaldo Aranha)
   const FREELA_CORPO = [
     '*Unidade Rudge Ramos*',
     'As principais atividades da função são:',
@@ -110,8 +110,9 @@
     '• Controlar o estoque',
     '• Responder os clientes via WhatsApp',
     '',
-    'Freelancer FIXO de sábado e domingo.',
-    'Valor: sábado R$ 120 + 11,90 de transporte; domingo e feriado R$ 160 + 11,90 de transporte.',
+    'Freelancer FIXO de sábado, domingo e feriados.',
+    'Sábado: R$ 120 + 11,90 de transporte',
+    'Domingo e feriados: R$ 160 + 11,90 de transporte',
     'Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo',
   ].join('\n');
   const FREELA_VAGA = `{saudacao}, tudo bem? No momento temos uma vaga de freelancer de atendente de delivery.\n\n${FREELA_CORPO}\n`;
@@ -180,7 +181,7 @@
       texto: msgAtendente('Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo') },
     { id: 'cozinha-cv', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Vaga de Auxiliar de Cozinha → pedir currículo', texto: COZINHA_VAGA },
     { id: 'atendente-cv', grupo: 'Atendente (CLT 6x1)', titulo: 'Vaga de Atendente → informações + pedir currículo', texto: ATENDENTE_VAGA },
-    { id: 'freela-cv', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir currículo',
+    { id: 'freela-cv', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Vaga de freelancer → informações + pedir currículo',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
     { id: 'cozinha-recebi', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Já mandou o currículo → informações da vaga de Auxiliar de Cozinha',
       texto: recebiCom(COZINHA_CORPO) },
@@ -188,17 +189,17 @@
       texto: recebiCom(ATENDENTE_CORPO) },
     { id: 'ambas-recebi', grupo: 'Geral', titulo: 'Já mandou o currículo → informações das duas vagas (cozinha e atendente)',
       texto: `Perfeito, obrigada pelo currículo! Seguem as informações das duas vagas:\n\n*Auxiliar de Cozinha (produção)*\n${COZINHA_CORPO}\n\n*Atendente de delivery*\n${ATENDENTE_CORPO}\n\n${RECEBI_FECHA}` },
-    { id: 'freela-recebi', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Já mandou o currículo → informações do freelancer',
+    { id: 'freela-recebi', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Já mandou o currículo → informações do freelancer',
       texto: recebiCom(FREELA_CORPO) },
-    { id: 'freela-correcao', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Correção: o freelancer é de atendente (para quem recebeu a mensagem antiga)',
+    { id: 'freela-correcao', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Correção: o freelancer é de atendente (para quem recebeu a mensagem antiga)',
       texto: FREELA_CORRECAO },
-    { id: 'freela-disp', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir disponibilidade',
+    { id: 'freela-disp', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Vaga de freelancer → informações + pedir disponibilidade',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que me informe a sua disponibilidade para eu repassar ao responsável` },
-    { id: 'qual-dia', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Qual dia? (sábado ou domingo)',
-      texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!' },
+    { id: 'qual-dia', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Qual dia? (sábado, domingo e feriados)',
+      texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado, domingo e feriados. Obrigada!' },
     { id: 'freela-ok', grupo: 'Geral', titulo: 'Está disponível → deixar currículo',
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
-    { id: 'pedir-cv-dia', grupo: 'Freelancer (atendente, sáb e dom)', titulo: 'Pedir currículo e dia',
+    { id: 'pedir-cv-dia', grupo: 'Freelancer (atendente, sáb, dom e feriados)', titulo: 'Pedir currículo e dia',
       texto: 'Perfeito! Pode me enviar o seu currículo e me dizer se seria sábado ou domingo? Vou repassar para o responsável.' },
     { id: 'pedir-cv', grupo: 'Geral', titulo: 'Pedir o currículo',
       texto: 'Perfeito! Pode me enviar o seu currículo, por favor? Vou repassar para o responsável.' },
@@ -211,6 +212,13 @@
       texto: 'Obrigada pela informação! Vou repassar para o responsável e já te retorno' },
   ];
   const FREELA = /(free.?la|\bfrila)/; // freelancer, free-lancer, free lancer, freela, frila
+  // v2.5: o freelancer mudou (atendente, Osvaldo Aranha, sábado R$ 120, domingo e feriados R$ 160). Textos do freelancer
+  // editados antes no ✏️ ainda tinham a vaga antiga, então voltam para o texto novo (uma vez só).
+  if (!ler('pmz:mig25', false)) {
+    const ed = { ...(ler(K.respostas, {}) || {}) };
+    for (const id of Object.keys(ed)) if (/^freela|^qual-dia$|^pedir-cv-dia$/.test(id)) delete ed[id];
+    gravar(K.respostas, ed); gravar('pmz:mig25', true);
+  }
   const textoResposta = id => { const r = RESPOSTAS.find(x => x.id === id); return (ler(K.respostas, {}) || {})[id] ?? (r ? r.texto : ''); };
   const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
   function preencher(t, nome) {
@@ -408,9 +416,9 @@
 ## Vagas (use só estas informações)
 1. Auxiliar de Cozinha (CLT), que também chamamos de "Auxiliar de produção" (é a mesma vaga). Fábrica de Rudge Ramos: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo. CLT 5x2: segunda a quinta das 8h00 às 18h00 e sexta das 8h00 às 17h00. Salário R$ 1.981,04, VA no cartão multibenefícios R$ 332,40 e vale-transporte. Atividades: pesagem de ingredientes; preparação de massas e recheios (cookies e pudins); assar os produtos; limpeza e organização da cozinha.
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
-3. Freelancer de Atendente de Delivery, FIXO de sábado e domingo, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). Valor: sábado R$ 120 + R$ 11,90 de transporte; domingo e feriado R$ 160 + R$ 11,90 de transporte. Mesmas atividades da vaga de Atendente. Não informe horário: se perguntarem, diga que vai confirmar com o responsável. No momento não há vaga de freelancer de Auxiliar de Cozinha.
+3. Freelancer de Atendente de Delivery, FIXO de sábado, domingo e feriados, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). Valor por dia: sábado R$ 120 + R$ 11,90 de transporte; domingo e feriados R$ 160 + R$ 11,90 de transporte (nunca diga que é R$ 160 por dia em todos os dias). Sempre diga que o freelancer também trabalha nos feriados. Mesmas atividades da vaga de Atendente. Não informe horário: se perguntarem, diga que vai confirmar com o responsável. No momento não há vaga de freelancer de Auxiliar de Cozinha.
 
-Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é de atendente de delivery, só aos sábados e domingos, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232): use-a quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa pedir freelancer de auxiliar de cozinha, diga que no momento a vaga de freelancer é de atendente de delivery e mande as informações dela.
+Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é de atendente de delivery, aos sábados, domingos e feriados, na unidade Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232): use-a quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa pedir freelancer de auxiliar de cozinha, diga que no momento a vaga de freelancer é de atendente de delivery e mande as informações dela.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem a mensagem da vaga. Se confirmarem interesse, ela pergunta a disponibilidade para a entrevista: Atendente → "Que bom! E como está a sua disponibilidade para uma entrevista online?"; Auxiliar de Cozinha (CLT) → "Que bom! E como está a sua disponibilidade para uma entrevista presencial na nossa unidade?". O freelancer não tem entrevista nessa etapa: só pedir o currículo.
