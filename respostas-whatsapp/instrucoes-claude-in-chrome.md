@@ -80,6 +80,9 @@ Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do C
 
 Caso te interesse peço que envie o currículo para eu repassar ao responsável
 
+### Pedir currículo e dia (freelancer que já recebeu as informações)
+Perfeito! Pode me enviar o seu currículo e me dizer se seria sábado ou domingo? Vou repassar para o responsável.
+
 ### Qual dia?
 {saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      1.8
+// @version      1.9
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '1.8';
+  const VERSAO = '1.9';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -151,6 +151,8 @@
       texto: '{saudacao}, tudo bem? Pode me informar para qual dia seria, por favor? Estamos com vaga para sábado e domingo. Obrigada!' },
     { id: 'freela-ok', grupo: 'Geral', titulo: 'Está disponível → deixar currículo',
       texto: 'Está sim, pode deixar o seu currículo que eu repasso para o responsável' },
+    { id: 'pedir-cv-dia', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Pedir currículo e dia',
+      texto: 'Perfeito! Pode me enviar o seu currículo e me dizer se seria sábado ou domingo? Vou repassar para o responsável.' },
     { id: 'pedir-cv', grupo: 'Geral', titulo: 'Pedir o currículo',
       texto: 'Perfeito! Pode me enviar o seu currículo, por favor? Vou repassar para o responsável.' },
     { id: 'recebi-cv', grupo: 'Geral', titulo: 'Recebi o currículo',
@@ -267,10 +269,12 @@
     // vaga de Auxiliar de Cozinha / produção
     if (cozinha) return mandouCozinha ? 'pedir-cv' : 'cozinha-cv';
     // vaga de freelancer (atendente)
-    if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
-    if (freela && !mandouFreela && /(saber|informa|como funciona|detalhe|vaga|interess|disponivel)/.test(t)) return 'freela-cv';
+    // primeiro contato sobre o freelancer: informações da vaga + pedir o currículo
+    if (freela && !mandouFreela) return 'freela-cv';
     if (atendente && !freela) return null; // atendente: pode ser a vaga CLT; escolha na lista ou peça ao Claude
-    if (freela || mandouFreela) return dia ? 'pedir-cv' : 'qual-dia';
+    // já recebeu as informações do freelancer
+    if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
+    if (freela || mandouFreela) return dia ? 'pedir-cv' : 'pedir-cv-dia';
     if (dia && ctxFreela) return 'pedir-cv';
     // demonstrou interesse depois da descrição da cozinha
     if (mandouCozinha && /(interess|quero|sim|pode ser|aceito)/.test(t)) return 'pedir-cv';
