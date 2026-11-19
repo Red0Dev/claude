@@ -19,7 +19,8 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
   de Cozinha (Rudge Ramos) ou Atendente (Vergueiro ou Nova Petrópolis, pelo endereço da mensagem). Se o
   assunto é freelance, mostra "Interessado no freelancer".
 - **Sugestão de resposta**, pela última mensagem da pessoa:
-  - "tenho interesse" depois da mensagem da vaga da Catho → **Tem interesse → próxima etapa**;
+  - "tenho interesse" depois da mensagem da vaga da Catho → pergunta a disponibilidade para a entrevista:
+    **online** para Atendente e **presencial na unidade** para Auxiliar de Cozinha (CLT);
   - "não tenho interesse", "já arrumei"… → **Sem interesse → agradecer**;
   - pergunta pela vaga de freelancer ou de atendente ("saber mais…") → **Vaga disponível → pedir currículo**;
   - pergunta se a vaga de freelancer ainda está disponível → **Está disponível → deixar currículo**;
@@ -41,8 +42,8 @@ https://raw.githubusercontent.com/Red0Dev/claude/claude/sleepy-cray-34k3es/respo
 - **✏️ Editar respostas** muda qualquer texto. **Voltar ao original** desfaz.
 
 Textos escritos no estilo das suas anotações, para os casos que faltavam: "Vaga de Auxiliar de Cozinha → pedir
-currículo", "Pedir o currículo", "Obrigada pelo bairro", "Tem interesse → próxima etapa" e "Sem interesse →
-agradecer". Ajuste à vontade em ✏️ Editar.
+currículo", "Pedir o currículo", "Pedir currículo e dia", "Obrigada pelo bairro" e "Sem interesse → agradecer".
+Ajuste à vontade em ✏️ Editar.
 
 ## 🧩 Claude in Chrome: o Claude deixa as respostas escritas e você envia
 
