@@ -10,7 +10,7 @@ Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pu
    - vá para a próxima.
 5. Nunca envie mensagem: eu vou abrir cada conversa, conferir o rascunho e enviar. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
 6. Pule a conversa se ela já tiver um rascunho escrito, ou se a última mensagem for minha (não há o que responder). Pule também conversas que precisam de decisão minha (remarcar entrevista, reclamação, negociação, conversa já depois da entrevista): coloque na lista de dúvidas, sem rascunho.
-7. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita. Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo) e as que pulou.
+7. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita. Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo), as que estão "Para você marcar a entrevista" e as que pulou.
 8. O quadro "PudiMarin · respostas" no canto da conversa é um ajudante meu. Pode usar a sugestão dele como pista, mas não clique nos botões dele.
 
 ## Como eu escrevo
@@ -24,12 +24,15 @@ Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pu
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
 3. Freelancer de Auxiliar de Cozinha, FIXO de sábado e domingo, na fábrica de Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). R$ 160 + R$ 11,90 de transporte por dia. Mesmas atividades da vaga de Auxiliar de Cozinha. Não informe horário: se perguntarem, diga que vou confirmar com o responsável.
 
-A vaga de freelancer é de Auxiliar de Cozinha. Se a pessoa falar de freelancer de atendente ou de delivery, explique que a vaga de freelancer é de Auxiliar de Cozinha na fábrica de Rudge Ramos e mande as informações dela.
+Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é só a de Auxiliar de Cozinha na fábrica de Rudge Ramos: use-a só quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa falar de freelancer de atendente ou de delivery, explique que a vaga de freelancer é de Auxiliar de Cozinha e mande as informações dela.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem de mim a mensagem da vaga (ela começa com "Você se cadastrou em nossa vaga de ... na Catho"). Se confirmarem interesse, pergunte a disponibilidade para a entrevista: Atendente → entrevista online; Auxiliar de Cozinha (CLT) → entrevista presencial na nossa unidade. Use as mensagens prontas "Tem interesse". O freelancer não tem entrevista nessa etapa: só pedir o currículo.
+- A entrevista online (vaga de Atendente) quem faz sou eu: nessa etapa nunca diga que vai repassar para o responsável. Se a pessoa ainda não disse quando pode, pergunte "Perfeito! Qual o melhor dia e horário para você?". Se ela já disse quando pode (ex.: "disponibilidade total", "amanhã de manhã", "hoje às 15h"), quem escolhe o horário sou eu. Nesse caso, não escreva rascunho: coloque a conversa na lista "Para você marcar a entrevista", com o que a pessoa disse.
+- Entrevista presencial (Auxiliar de Cozinha CLT): depois que a pessoa disser a disponibilidade, diga "Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia e o horário da entrevista."
 - Freelancer: se a pessoa falar da vaga de freelancer e ainda não tiver mandado o currículo, mande as informações da vaga E peça o currículo (use a mensagem pronta "Vaga de freelancer"). Se ela não disse o dia, pergunte se seria sábado ou domingo.
 - Se a pessoa mandar foto ou PDF depois de eu pedir o currículo, é o currículo: agradeça e diga que vou repassar.
+- Se a pessoa perguntar da vaga de atendente (sem falar em freelancer) e ainda não tiver mandado o currículo, mande as informações da vaga de atendente CLT E peça o currículo (mensagem pronta "Vaga de Atendente").
 - Se a pessoa não disser a vaga, pergunte para qual vaga seria.
 - Se o currículo não tiver o bairro, peça o bairro.
 
@@ -49,6 +52,12 @@ Que bom! E como está a sua disponibilidade para uma entrevista online?
 ### Tem interesse (Auxiliar de Cozinha CLT, Catho) → entrevista presencial
 Que bom! E como está a sua disponibilidade para uma entrevista presencial na nossa unidade?
 
+### Entrevista online → perguntar dia e horário
+Perfeito! Qual o melhor dia e horário para você?
+
+### Entrevista presencial → repassar e retornar
+Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia e o horário da entrevista.
+
 ### Sem interesse → agradecer
 Tudo bem, {nome}! Obrigada pelo retorno.
 
@@ -64,6 +73,25 @@ As principais atividades da função são:
 
 Freelancer FIXO de sábado e domingo, valor R$ 160 + 11,90 de transporte por dia.
 Endereço: Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo
+
+Caso te interesse peço que envie o currículo para eu repassar ao responsável
+
+### Vaga de Atendente (CLT 6x1) → informações + pedir currículo
+{saudacao}, tudo bem? No momento temos vaga de atendente de delivery.
+
+*Unidades Vergueiro e Nova Petrópolis*
+As principais atividades da função são:
+• Atendimento ao cliente e caixa
+• Receber pedidos via aplicativo
+• Preparar os pedidos de forma ágil e organizada
+• Organizar e conferir os pedidos antes da entrega
+• Controlar o estoque
+• Responder os clientes via WhatsApp
+
+Modelo de contratação: CLT (6x1)
+Horário: 6x na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30
+Salário: R$ 2.076,97 + VA no cartão multibenefícios de R$ 400,00 + Vale-Transporte
+Endereços: Av. Senador Vergueiro, 2123 - Rudge Ramos e Av. Francisco Prestes Maia, 957 - Centro (Nova Petrópolis), São Bernardo do Campo
 
 Caso te interesse peço que envie o currículo para eu repassar ao responsável
 

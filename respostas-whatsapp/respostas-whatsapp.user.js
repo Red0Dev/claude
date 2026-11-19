@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Respostas PudiMarin - WhatsApp Web
 // @namespace    respostas-whatsapp-pudimarin
-// @version      2.0
+// @version      2.2
 // @description  Sugere e coloca na caixa de mensagem as respostas das vagas, prontas ou escritas pela IA (você confere e aperta Enter)
 // @match        https://web.whatsapp.com/*
 // @run-at       document-idle
@@ -27,7 +27,7 @@
 (() => {
   'use strict';
 
-  const VERSAO = '2.0';
+  const VERSAO = '2.2';
   const K = { respostas: 'pmz:respostas', ui: 'pmz:ui', ia: 'pmz:ia', gasto: 'pmz:gasto' };
 
   // ------------------------------------------------------------------ utilidades
@@ -132,11 +132,37 @@
     'Caso te interesse peço que envie o currículo para eu repassar ao responsável',
   ].join('\n');
 
+  const ATENDENTE_VAGA = [
+    '{saudacao}, tudo bem? No momento temos vaga de atendente de delivery.',
+    '',
+    '*Unidades Vergueiro e Nova Petrópolis*',
+    'As principais atividades da função são:',
+    '• Atendimento ao cliente e caixa',
+    '• Receber pedidos via aplicativo',
+    '• Preparar os pedidos de forma ágil e organizada',
+    '• Organizar e conferir os pedidos antes da entrega',
+    '• Controlar o estoque',
+    '• Responder os clientes via WhatsApp',
+    '',
+    'Modelo de contratação: CLT (6x1)',
+    'Horário: 6x na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30',
+    'Salário: R$ 2.076,97 + VA no cartão multibenefícios de R$ 400,00 + Vale-Transporte',
+    'Endereços: Av. Senador Vergueiro, 2123 - Rudge Ramos e Av. Francisco Prestes Maia, 957 - Centro (Nova Petrópolis), São Bernardo do Campo',
+    '',
+    'Caso te interesse peço que envie o currículo para eu repassar ao responsável',
+  ].join('\n');
+
   const RESPOSTAS = [
     { id: 'entrevista-online', grupo: 'Vaga CLT (Catho)', titulo: 'Tem interesse (Atendente) → entrevista online',
       texto: 'Que bom! E como está a sua disponibilidade para uma entrevista online?' },
     { id: 'entrevista-presencial', grupo: 'Vaga CLT (Catho)', titulo: 'Tem interesse (Auxiliar de Cozinha) → entrevista presencial',
       texto: 'Que bom! E como está a sua disponibilidade para uma entrevista presencial na nossa unidade?' },
+    { id: 'melhor-horario', grupo: 'Vaga CLT (Catho)', titulo: 'Entrevista online → perguntar dia e horário',
+      texto: 'Perfeito! Qual o melhor dia e horário para você?' },
+    { id: 'confirmar-online', grupo: 'Vaga CLT (Catho)', titulo: 'Entrevista online → propor dia e horário (complete)',
+      texto: 'Perfeito! Podemos fazer a entrevista online [dia] às [horário]?' },
+    { id: 'presencial-retorno', grupo: 'Vaga CLT (Catho)', titulo: 'Entrevista presencial → repassar e retornar',
+      texto: 'Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia e o horário da entrevista.' },
     { id: 'sem-interesse', grupo: 'Vaga CLT (Catho)', titulo: 'Sem interesse → agradecer',
       texto: 'Tudo bem, {nome}! Obrigada pelo retorno.' },
     { id: 'vaga-cozinha', grupo: 'Vaga CLT (Catho)', titulo: 'Mensagem da vaga — Auxiliar de Cozinha (Rudge Ramos)', texto: MSG_COZINHA },
@@ -145,6 +171,7 @@
     { id: 'vaga-petropolis', grupo: 'Vaga CLT (Catho)', titulo: 'Mensagem da vaga — Atendente (Nova Petrópolis)',
       texto: msgAtendente('Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo') },
     { id: 'cozinha-cv', grupo: 'Auxiliar de Cozinha (produção)', titulo: 'Vaga de Auxiliar de Cozinha → pedir currículo', texto: COZINHA_VAGA },
+    { id: 'atendente-cv', grupo: 'Atendente (CLT 6x1)', titulo: 'Vaga de Atendente → informações + pedir currículo', texto: ATENDENTE_VAGA },
     { id: 'freela-cv', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir currículo',
       texto: `${FREELA_VAGA}\nCaso te interesse peço que envie o currículo para eu repassar ao responsável` },
     { id: 'freela-disp', grupo: 'Freelancer (cozinha, sáb e dom)', titulo: 'Vaga de freelancer → informações + pedir disponibilidade',
@@ -258,6 +285,12 @@
     const conversaToda = norm(msgs.map(m => m.texto).join(' '));
     // respondeu o bairro que você pediu
     if (/informar o seu bairro/.test(ultimaSua)) return 'bairro-ok';
+    // respondeu sobre a entrevista: online (você faz e escolhe o horário) ou presencial (vai para o responsável)
+    if (/entrevista online|melhor dia e horario/.test(ultimaSua)) {
+      const disse = /(\d{1,2}\s*h|\d{1,2}:\d{2}|manha|tarde|noite|hoje|amanha|segunda|terca|quarta|quinta|sexta|sabado|domingo|total|qualquer|livre)/.test(t);
+      return disse ? 'confirmar-online' : /(sim|tenho|posso|disponivel|disponibilidade)/.test(t) ? 'melhor-horario' : null;
+    }
+    if (/entrevista presencial/.test(ultimaSua)) return /(sim|tenho|posso|disponivel|disponibilidade|\d{1,2}\s*h|manha|tarde|hoje|amanha)/.test(t) ? 'presencial-retorno' : null;
     if (catho) {
       if (!/(interess|aceito|topo|quero|de acordo|\bsim\b|pode ser|claro)/.test(t)) return null;
       return a.vaga === 'atendente' ? 'entrevista-online' : a.vaga === 'cozinha' ? 'entrevista-presencial' : null;
@@ -277,13 +310,15 @@
     // vaga de freelancer (atendente)
     // primeiro contato sobre o freelancer: informações da vaga + pedir o currículo
     if (freela && !mandouFreela) return 'freela-cv';
-    if (atendente && !freela) return null; // atendente: pode ser a vaga CLT; escolha na lista ou peça ao Claude
+    // atendente sem falar em freelancer = vaga CLT 6x1 (Vergueiro / Nova Petrópolis)
+    const mandouAtendente = /vaga de atendente de delivery\.? \*?unidades vergueiro/.test(nossas) || /unidades vergueiro e nova petropolis/.test(nossas);
+    if (atendente && !freela) return mandouAtendente ? (/(interess|quero|sim|pode ser|aceito)/.test(t) ? 'pedir-cv' : null) : 'atendente-cv';
     // já recebeu as informações do freelancer
     if (freela && /(disponivel|ainda (tem|esta|ta)|tem vaga|esta aberta)/.test(t)) return 'freela-ok';
     if (freela || mandouFreela) return dia ? 'pedir-cv' : 'pedir-cv-dia';
     if (dia && ctxFreela) return 'pedir-cv';
     // demonstrou interesse depois da descrição da cozinha
-    if (mandouCozinha && /(interess|quero|sim|pode ser|aceito)/.test(t)) return 'pedir-cv';
+    if ((mandouCozinha || mandouAtendente) && /(interess|quero|sim|pode ser|aceito)/.test(t)) return 'pedir-cv';
     // quer se candidatar sem dizer a vaga
     if (/(candidat|interess|vaga|trabalh|oportunidade)/.test(t)) return 'qual-vaga';
     return null;
@@ -343,11 +378,14 @@
 2. Atendente (CLT 6x1), lojas Vergueiro (Av. Senador Vergueiro, 2123 - Rudge Ramos, São Bernardo do Campo) e Nova Petrópolis (Av. Francisco Prestes Maia, 957 - Centro, São Bernardo do Campo). 6 dias na semana com uma folga fixa e 2 domingos no mês, das 11h30 às 20h30. Salário R$ 2.076,97, VA no cartão multibenefícios R$ 400,00 e vale-transporte. Atividades: atendimento ao cliente e caixa; receber pedidos via aplicativo; preparar os pedidos de forma ágil e organizada; organizar e conferir os pedidos antes da entrega; controlar o estoque; responder os clientes via WhatsApp.
 3. Freelancer de Auxiliar de Cozinha, FIXO de sábado e domingo, na fábrica de Rudge Ramos (Avenida Ministro Osvaldo Aranha, 232, Rudge Ramos, São Bernardo do Campo). R$ 160 + R$ 11,90 de transporte por dia. Mesmas atividades da vaga de Auxiliar de Cozinha. Não informe horário: se perguntarem, diga que vai confirmar com o responsável.
 
-A vaga de freelancer é de Auxiliar de Cozinha. Se a pessoa falar de freelancer de atendente ou de delivery, explique que a vaga de freelancer é de Auxiliar de Cozinha na fábrica de Rudge Ramos e mande as informações dela.
+Atenção para não confundir: "atendente" ou "atendente de delivery" sem a palavra freelancer é a vaga CLT 6x1 de Atendente (lojas Vergueiro e Nova Petrópolis), que tem horário fixo das 11h30 às 20h30. A vaga de freelancer é só a de Auxiliar de Cozinha na fábrica de Rudge Ramos: use-a só quando a pessoa falar "freelancer", "freela" ou "frila". Se a pessoa falar de freelancer de atendente ou de delivery, explique que a vaga de freelancer é de Auxiliar de Cozinha e mande as informações dela.
 
 ## Como o processo funciona
 - Candidatos da Catho recebem a mensagem da vaga. Se confirmarem interesse, ela pergunta a disponibilidade para a entrevista: Atendente → "Que bom! E como está a sua disponibilidade para uma entrevista online?"; Auxiliar de Cozinha (CLT) → "Que bom! E como está a sua disponibilidade para uma entrevista presencial na nossa unidade?". O freelancer não tem entrevista nessa etapa: só pedir o currículo.
+- A entrevista online (vaga de Atendente) quem faz sou eu: nessa etapa nunca diga que vai repassar para o responsável. Se a pessoa ainda não disse quando pode, pergunte "Perfeito! Qual o melhor dia e horário para você?". Se ela já disse quando pode (ex.: "disponibilidade total", "amanhã de manhã", "hoje às 15h"), quem escolhe o horário sou eu. Nesse caso, proponha com espaço para ela completar: "Perfeito! Podemos fazer a entrevista online [dia] às [horário]?".
+- Entrevista presencial (Auxiliar de Cozinha CLT): depois que a pessoa disser a disponibilidade, diga "Perfeito, obrigada! Vou repassar para o responsável e já te retorno com o dia e o horário da entrevista."
 - Freelancer: se a pessoa falar da vaga de freelancer e ainda não tiver mandado o currículo, mandar as informações da vaga E pedir o currículo (mensagem pronta "Vaga de freelancer"). Se ela não disse o dia, perguntar se seria sábado ou domingo.
+- Se a pessoa perguntar da vaga de atendente (sem falar em freelancer) e ainda não tiver mandado o currículo, mandar as informações da vaga de atendente CLT E pedir o currículo (mensagem pronta "Vaga de Atendente").
 - Se a pessoa não disser a vaga, perguntar para qual vaga seria.
 - Se o currículo não tiver o bairro, pedir o bairro.
 
@@ -573,8 +611,9 @@ ${prontas}`;
     if (!el) return;
     const c = conversaAberta();
     if (el.dataset.r) {
-      const ok = await colocarNaCaixa(preencher(textoResposta(el.dataset.r), c ? nomeDaPessoa(c) : ''));
-      aviso = { em: Date.now(), copia: !ok, txt: ok ? 'Pronto: a resposta está na caixa de mensagem. Confira e aperte Enter.'
+      const txt = preencher(textoResposta(el.dataset.r), c ? nomeDaPessoa(c) : '');
+      const ok = await colocarNaCaixa(txt);
+      aviso = { em: Date.now(), copia: !ok, txt: ok ? (/\[(dia|horário|cidade)/.test(txt) ? 'Na caixa: troque o que está entre [ ] antes de enviar.' : 'Pronto: a resposta está na caixa de mensagem. Confira e aperte Enter.')
         : 'Copiei a resposta. Clique na caixa de mensagem e aperte Ctrl+V.' };
       aberto = false;
       desenhar(true);
