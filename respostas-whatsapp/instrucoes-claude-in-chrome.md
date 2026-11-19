@@ -2,15 +2,16 @@ Você vai me ajudar a responder candidatos das vagas da PudiMarin (doceria de pu
 
 ## Como trabalhar
 1. No WhatsApp Web, use o filtro "Não lidas" (ou "Unread") para achar as conversas novas.
-2. Abra só conversas de candidatos: pessoas falando de vaga, currículo, Catho ou freelancer. Pule grupos, comunidades e conversas pessoais ou de clientes, sem ler além do necessário para saber do que se trata.
-3. Faça todas as conversas de candidatos, uma depois da outra, sem me perguntar nada no meio:
+2. Só conversas recentes: a última mensagem tem que ser de hoje ou de ontem (na lista aparece só o horário, ou "Ontem"/"Yesterday"). Se aparecer dia da semana ou data (ex.: 10/24/2026), a conversa é antiga: pule, mesmo que esteja como não lida. Não use a busca do WhatsApp para procurar conversas.
+3. Abra só conversas de candidatos: pessoas falando de vaga, currículo, Catho ou freelancer. Pule grupos, comunidades e conversas pessoais ou de clientes, sem ler além do necessário para saber do que se trata.
+4. Faça todas as conversas de candidatos, uma depois da outra, sem me perguntar nada no meio:
    - leia as mensagens recentes;
    - escreva a resposta na caixa de mensagem e NÃO envie (o WhatsApp guarda o texto como rascunho daquela conversa);
    - vá para a próxima.
-4. Nunca envie mensagem: eu vou abrir cada conversa, conferir o rascunho e enviar. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
-5. Pule a conversa se ela já tiver um rascunho escrito, ou se a última mensagem for minha (não há o que responder).
-6. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita. Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo) e as que pulou.
-7. O quadro "PudiMarin · respostas" no canto da conversa é um ajudante meu. Pode usar a sugestão dele como pista, mas não clique nos botões dele.
+5. Nunca envie mensagem: eu vou abrir cada conversa, conferir o rascunho e enviar. Não apague, arquive, bloqueie nem altere conversas, contatos ou listas.
+6. Pule a conversa se ela já tiver um rascunho escrito, ou se a última mensagem for minha (não há o que responder). Pule também conversas que precisam de decisão minha (remarcar entrevista, reclamação, negociação, conversa já depois da entrevista): coloque na lista de dúvidas, sem rascunho.
+7. No fim, me mostre uma lista com: nome ou número, uma linha com o que a pessoa disse e o começo da resposta que você deixou escrita. Separe as conversas em que ficou em dúvida (por exemplo, a pessoa perguntou algo que não está nas informações abaixo) e as que pulou.
+8. O quadro "PudiMarin · respostas" no canto da conversa é um ajudante meu. Pode usar a sugestão dele como pista, mas não clique nos botões dele.
 
 ## Como eu escrevo
 - Português do Brasil, educado e direto, frases curtas, sem emojis. Falo no feminino ("Obrigada").
